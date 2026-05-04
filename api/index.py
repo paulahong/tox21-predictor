@@ -56,6 +56,7 @@ def predict():
         
         # Replace inf/-inf with nan (pipeline will handle imputation)
         X = X.replace([np.inf, -np.inf], np.nan)
+        X = X.reindex(columns=model.feature_names_in_, fill_value=np.nan)
 
         # Use the pipeline directly - it handles imputation, variance filtering, scaling, and prediction
         prob = model.predict_proba(X)[0][1]
