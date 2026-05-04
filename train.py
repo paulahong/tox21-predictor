@@ -5,11 +5,12 @@ from rdkit.Chem import Descriptors
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
+from sklearn.feature_selection import VarianceThreshold
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score, roc_auc_score
+from sklearn.metrics import f1_score, average_precision_score
 import pickle
 
 def download_tox21():
@@ -56,93 +57,95 @@ def process_data(df, target_col='NR-AR'):
     # Replace inf/-inf with nan before imputation
     X = X.replace([np.inf, -np.inf], np.nan)
     
-    # Impute missing descriptor values with mean
-    print("Imputing missing descriptor values...")
-    imputer = SimpleImputer(strategy='mean')
-    X_imputed = imputer.fit_transform(X)
-    # Clip values to float32 limits to prevent overflow in tree-based models
-    X_imputed = np.clip(X_imputed, np.finfo(np.float32).min, np.finfo(np.float32).max)
-    X = pd.DataFrame(X_imputed, columns=desc_names)
-    
+    # Do NOT impute here; imputation will be done inside the pipeline
+    # Return X with possible NaN values
     return X, y, desc_names
 
 def train_and_evaluate(X, y):
-    """Train 3 ML classifiers, evaluate performance, return best model"""
+    """Train 3 ML classifiers with pipelines, evaluate performance, return best model"""
     # Split into train/test sets with stratification
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
     )
     
-    # Fit StandardScaler on training data and save it for production use
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
-    
-    # Save scaler to file for production use
-    with open('scaler.pkl', 'wb') as f:
-        pickle.dump(scaler, f)
-    print("Scaler saved to scaler.pkl")
-    
     # Define 3 classifiers with class balancing for imbalanced data
-    # All classifiers use scaled data
     classifiers = {
         'Logistic Regression': LogisticRegression(class_weight='balanced', max_iter=1000, random_state=42),
-        'Random Forest': RandomForestClassifier(
-            class_weight='balanced', n_estimators=100, random_state=42
-        ),
+        'Random Forest': RandomForestClassifier(class_weight='balanced', n_estimators=100, random_state=42),
         'SVM': SVC(class_weight='balanced', probability=True, random_state=42)
     }
     
     best_score = -1
     best_model = None
     best_model_name = ''
+    best_X_train = None
     
     print("\nTraining and evaluating classifiers...")
     for name, clf in classifiers.items():
         print(f"\nTraining {name}...")
-        clf.fit(X_train_scaled, y_train)
+        # Create pipeline with imputation, variance threshold, scaling, and classifier
+        pipeline = Pipeline([
+            ('imputer', SimpleImputer(strategy='mean')),
+            ('variance_filter', VarianceThreshold(threshold=0.0)),
+            ('scaler', StandardScaler()),
+            ('classifier', clf)
+        ])
+        pipeline.fit(X_train, y_train)
         
         # Predictions
-        y_pred = clf.predict(X_test_scaled)
-        y_proba = clf.predict_proba(X_test_scaled)[:, 1]
+        y_pred = pipeline.predict(X_test)
+        y_proba = pipeline.predict_proba(X_test)[:, 1]
         
-        # Metrics
-        accuracy = accuracy_score(y_test, y_pred)
-        roc_auc = roc_auc_score(y_test, y_proba)
+        # Metrics focused on imbalanced data
+        f1 = f1_score(y_test, y_pred, average='binary')
+        pr_auc = average_precision_score(y_test, y_proba)
         
-        print(f"{name} - Accuracy: {accuracy:.4f}, ROC-AUC: {roc_auc:.4f}")
+        print(f"{name} - F1: {f1:.4f}, PR-AUC: {pr_auc:.4f}")
         
-        # Track best model (using ROC-AUC as primary metric)
-        if roc_auc > best_score:
-            best_score = roc_auc
-            best_model = clf
+        # Track best model based on PR-AUC (higher is better)
+        if pr_auc > best_score:
+            best_score = pr_auc
+            best_model = pipeline
             best_model_name = name
             best_X_train = X_train
     
-    print(f"\nBest model: {best_model_name} with ROC-AUC: {best_score:.4f}")
+    print(f"\nBest model: {best_model_name} with PR-AUC: {best_score:.4f}")
     return best_model, best_model_name, best_X_train, y_train
 
 def extract_top_descriptors(best_model, best_model_name, X_train, y_train):
-    """Extract top 5 most important descriptors from best model"""
+    """Extract top 5 most important descriptors from best model, accounting for variance filter"""
     print("\nExtracting top 5 important descriptors...")
+    
+    # Get the variance filter step to know which features were kept
+    variance_filter = best_model.named_steps['variance_filter']
+    support = variance_filter.get_support()
+    
+    # Original feature names (from X_train columns)
     feature_names = X_train.columns.tolist()
+    # Subset to features that passed variance threshold
+    feature_names_after = [feature_names[i] for i in range(len(feature_names)) if support[i]]
+    
+    # Get the classifier step
+    classifier = best_model.named_steps['classifier']
     
     if best_model_name == 'Random Forest':
-        importances = best_model.feature_importances_
-        top_indices = np.argsort(importances)[-5:][::-1]
+        importances = classifier.feature_importances_
     elif best_model_name == 'Logistic Regression':
-        clf = best_model.named_steps['clf']
-        importances = np.abs(clf.coef_[0])
-        top_indices = np.argsort(importances)[-5:][::-1]
+        importances = np.abs(classifier.coef_[0])
     elif best_model_name == 'SVM':
-        # SVM has no built-in feature importance, train auxiliary RF for explanation
+        # SVM has no built-in feature importance, train auxiliary RF on transformed data
         print("SVM has no native feature importance. Training auxiliary Random Forest for descriptor ranking...")
+        # Create preprocessor pipeline (all steps except classifier)
+        preprocessor = Pipeline(best_model.steps[:-1])
+        X_train_transformed = preprocessor.transform(X_train)
         rf = RandomForestClassifier(class_weight='balanced', random_state=42)
-        rf.fit(X_train, y_train)
+        rf.fit(X_train_transformed, y_train)
         importances = rf.feature_importances_
-        top_indices = np.argsort(importances)[-5:][::-1]
+        # feature_names_after already corresponds to transformed features
     
-    top_descriptors = [feature_names[i] for i in top_indices]
+    # Get top 5 indices based on importances
+    top_indices = np.argsort(importances)[-5:][::-1]
+    top_descriptors = [feature_names_after[i] for i in top_indices]
     return top_descriptors
 
 def write_descriptor_explanations(top_descriptors, filename='descriptors_explanation.txt'):
@@ -170,7 +173,7 @@ def write_descriptor_explanations(top_descriptors, filename='descriptors_explana
     print(f"Descriptor explanations written to {filename}")
 
 def save_best_model(best_model, filename='best_model.pkl'):
-    """Save best model to disk"""
+    """Save best model (pipeline) to disk"""
     with open(filename, 'wb') as f:
         pickle.dump(best_model, f)
     print(f"Best model saved as {filename}")
@@ -188,5 +191,5 @@ if __name__ == "__main__":
     print(f"Top 5 descriptors: {top_descriptors}")
     write_descriptor_explanations(top_descriptors)
     
-    # Save best model
+    # Save best model (entire pipeline)
     save_best_model(best_model)
