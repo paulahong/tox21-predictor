@@ -7,7 +7,13 @@ from rdkit import Chem
 from rdkit.Chem import Descriptors
 from sklearn.impute import SimpleImputer
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../', static_url_path='/')
+
+@app.route('/')
+def index():
+    return app.send_static_file('index.html')
+
+@app.route('/api', methods=['POST', 'GET'])
 
 # Cargar el modelo
 MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'best_model.pkl')
