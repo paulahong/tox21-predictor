@@ -1,0 +1,8 @@
+Top 5 Most Important Molecular Descriptors
+==========================================
+
+1. BCUT2D_MWLOW: No detailed explanation available for BCUT2D_MWLOW.
+2. BCUT2D_CHGLO: No detailed explanation available for BCUT2D_CHGLO.
+3. NumAtomStereoCenters: No detailed explanation available for NumAtomStereoCenters.
+4. NumAliphaticCarbocycles: No detailed explanation available for NumAliphaticCarbocycles.
+5. SPS: No detailed explanation available for SPS.
