@@ -14,6 +14,11 @@ MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'best_model.pkl')
 with open(MODEL_PATH, 'rb') as f:
     model = pickle.load(f)
 
+# Cargar el scaler
+SCALER_PATH = os.path.join(os.path.dirname(__file__), '..', 'scaler.pkl')
+with open(SCALER_PATH, 'rb') as f:
+    scaler = pickle.load(f)
+
 DESC_LIST = Descriptors.descList
 DESC_NAMES = [d[0] for d in DESC_LIST]
 
@@ -59,7 +64,9 @@ def predict():
         X_imputed = imputer.fit_transform(X)
         X_clipped = np.clip(X_imputed, np.finfo(np.float32).min, np.finfo(np.float32).max)
 
-        prob = model.predict_proba(X_clipped)[0][1]
+        X_scaled = scaler.transform(X_clipped)
+
+        prob = model.predict_proba(X_scaled)[0][1]
         toxicity = 'Toxic' if prob >= 0.5 else 'Non-Toxic'
 
         return jsonify({'toxicity': toxicity, 'probability': float(prob)})

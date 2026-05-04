@@ -73,19 +73,24 @@ def train_and_evaluate(X, y):
         X, y, test_size=0.2, random_state=42, stratify=y
     )
     
+    # Fit StandardScaler on training data and save it for production use
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+    
+    # Save scaler to file for production use
+    with open('scaler.pkl', 'wb') as f:
+        pickle.dump(scaler, f)
+    print("Scaler saved to scaler.pkl")
+    
     # Define 3 classifiers with class balancing for imbalanced data
+    # All classifiers use scaled data
     classifiers = {
-        'Logistic Regression': Pipeline([
-            ('scaler', StandardScaler()),
-            ('clf', LogisticRegression(class_weight='balanced', max_iter=1000, random_state=42))
-        ]),
+        'Logistic Regression': LogisticRegression(class_weight='balanced', max_iter=1000, random_state=42),
         'Random Forest': RandomForestClassifier(
             class_weight='balanced', n_estimators=100, random_state=42
         ),
-        'SVM': Pipeline([
-            ('scaler', StandardScaler()),
-            ('clf', SVC(class_weight='balanced', probability=True, random_state=42))
-        ])
+        'SVM': SVC(class_weight='balanced', probability=True, random_state=42)
     }
     
     best_score = -1
@@ -95,11 +100,11 @@ def train_and_evaluate(X, y):
     print("\nTraining and evaluating classifiers...")
     for name, clf in classifiers.items():
         print(f"\nTraining {name}...")
-        clf.fit(X_train, y_train)
+        clf.fit(X_train_scaled, y_train)
         
         # Predictions
-        y_pred = clf.predict(X_test)
-        y_proba = clf.predict_proba(X_test)[:, 1]
+        y_pred = clf.predict(X_test_scaled)
+        y_proba = clf.predict_proba(X_test_scaled)[:, 1]
         
         # Metrics
         accuracy = accuracy_score(y_test, y_pred)
