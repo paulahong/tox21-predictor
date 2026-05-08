@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tox21 Toxicity Predictor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Tox21 Toxicity Predictor</h1>
+            <p class="subtitle">Predict nuclear receptor (NR-AR) toxicity using machine learning</p>
+        </header>
+        
+        <div class="input-section">
+            <label for="smiles-input">Enter SMILES String:</label>
+            <input type="text" id="smiles-input" placeholder="e.g., CC(=O)OC1=CC=CC=C1C(=O)O (Aspirin)" />
+            <button id="predict-btn" onclick="predictToxicity()">Predict Toxicity</button>
+        </div>
+        
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Computing descriptors and predicting...</p>
+        </div>
+        
+        <div id="results" class="results hidden">
+            <h2>Prediction Results</h2>
+            <div id="prediction-result" class="prediction-box">
+                <div id="toxicity-label" class="toxicity-label"></div>
+                <div class="probability-bar-container">
+                    <div id="probability-bar" class="probability-bar"></div>
+                </div>
+                <p id="probability-text" class="probability-text"></p>
+            </div>
+            <div id="descriptor-info" class="descriptor-info">
+                <h3>Top 5 Important Descriptors:</h3>
+                <ul>
+                    <li>BCUT2D_MWLOW</li>
+                    <li>BCUT2D_CHGLO</li>
+                    <li>NumAtomStereoCenters</li>
+                    <li>NumAliphaticCarbocycles</li>
+                    <li>SPS</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div id="error" class="error hidden"></div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
