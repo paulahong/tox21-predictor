@@ -1,8 +1,0 @@
-Top 5 Most Important Molecular Descriptors
-==========================================
-
-1. BCUT2D_CHGLO: No detailed explanation available for BCUT2D_CHGLO.
-2. NumAliphaticCarbocycles: No detailed explanation available for NumAliphaticCarbocycles.
-3. BCUT2D_LOGPHI: No detailed explanation available for BCUT2D_LOGPHI.
-4. BCUT2D_CHGHI: No detailed explanation available for BCUT2D_CHGHI.
-5. fr_bicyclic: No detailed explanation available for fr_bicyclic.

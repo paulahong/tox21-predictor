@@ -1,0 +1,8 @@
+Top 5 Most Important Molecular Descriptors (SHAP Analysis)
+==========================================================
+
+1. MorganBit_519: Structural Fingerprint Bit: Represents a specific local molecular environment or pattern.
+2. HallKierAlpha: Hall-Kier Alpha: Describes molecular shape and flexibility, influencing how easily a molecule can fit into a biological receptor like NR-AR.
+3. MaxAbsEStateIndex: Maximum Absolute E-State Index: Measures the electronic state and reactivity of specific atoms in the molecule, often related to toxicophores.
+4. SMR_VSA5: Physicochemical Property (SMR_VSA5): A molecular descriptor identified as relevant for the NR-AR toxicological endpoint.
+5. BalabanJ: Balaban J Index: A highly sophisticated topological index representing molecular branching. It helps distinguish between isomers with different toxicities.
