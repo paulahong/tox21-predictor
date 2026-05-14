@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tox21 Toxicity Predictor</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <script src="https://unpkg.com/smiles-drawer@2.0.1/dist/smiles-drawer.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -17,6 +19,16 @@
             <label for="smiles-input">Enter SMILES String:</label>
             <input type="text" id="smiles-input" placeholder="e.g., CC(=O)OC1=CC=CC=C1C(=O)O (Aspirin)" />
             <button id="predict-btn" onclick="predictToxicity()">Predict Toxicity</button>
+            
+            <div class="smiles-examples">
+                <span class="example-title">Try an example:</span>
+                <div class="example-buttons">
+                    <button type="button" class="example-btn" onclick="loadExample('CC(=O)OC1=CC=CC=C1C(=O)O')">Aspirin</button>
+                    <button type="button" class="example-btn" onclick="loadExample('CN1C=NC2=C1C(=O)N(C(=O)N2C)C')">Caffeine</button>
+                    <button type="button" class="example-btn" onclick="loadExample('CCO')">Ethanol</button>
+                    <button type="button" class="example-btn" onclick="loadExample('C1=CC=C(C=C1)O')">Phenol</button>
+                </div>
+            </div>
         </div>
         
         <div id="loading" class="loading hidden">
@@ -26,22 +38,28 @@
         
         <div id="results" class="results hidden">
             <h2>Prediction Results</h2>
-            <div id="prediction-result" class="prediction-box">
-                <div id="toxicity-label" class="toxicity-label"></div>
-                <div class="probability-bar-container">
-                    <div id="probability-bar" class="probability-bar"></div>
+            
+            <div class="results-main-layout">
+                
+                <div class="molecule-viewer">
+                    <canvas id="molecule-canvas" width="220" height="220"></canvas>
                 </div>
-                <p id="probability-text" class="probability-text"></p>
+                
+                <div id="prediction-result" class="prediction-box">
+                    <div id="toxicity-label" class="toxicity-label"></div>
+                    <div class="probability-bar-container">
+                        <div id="probability-bar" class="probability-bar"></div>
+                    </div>
+                    <p id="probability-text" class="probability-text"></p>
+                </div>
+                
             </div>
+            
             <div id="descriptor-info" class="descriptor-info">
-                <h3>Top 5 Important Descriptors:</h3>
-                <ul>
-                    <li>BCUT2D_MWLOW</li>
-                    <li>BCUT2D_CHGLO</li>
-                    <li>NumAtomStereoCenters</li>
-                    <li>NumAliphaticCarbocycles</li>
-                    <li>SPS</li>
-                </ul>
+                <h3>Top 5 Important Descriptors (SHAP Impact):</h3>
+                <p class="shap-intro">These are the molecular features that contributed most to this specific prediction:</p>
+                <ul id="shap-list" class="shap-list">
+                    </ul>
             </div>
         </div>
         

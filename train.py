@@ -1,6 +1,6 @@
 import matplotlib
 matplotlib.use('Agg')
-import joblib, shap, os, tempfile, json
+import joblib, shap
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -99,6 +99,27 @@ def prepare_matrix(features_list):
     print(f"Matriz de características creada con forma: {X.shape}")
     
     return X
+
+def apply_downsampling(X_train, y_train, random_state=42):
+    idx_toxic = np.where(y_train == 1)[0]
+    idx_nontoxic = np.where(y_train == 0)[0]
+    
+    # Definimos el tamaño de la clase no tóxica como el doble de la tóxica
+    target_nontoxic_size = len(idx_toxic) 
+    
+    # Guardamos un control por si acaso el dataset original no tuviera suficientes muestras
+    # (aunque en Tox21 sobran no tóxicos, es una buena práctica de seguridad en código)
+    nontoxic_size = min(len(idx_nontoxic), target_nontoxic_size)
+    
+    np.random.seed(random_state)
+    idx_nontoxic_downsampled = np.random.choice(
+        idx_nontoxic, size=nontoxic_size, replace=False
+    )
+    
+    new_indices = np.concatenate([idx_toxic, idx_nontoxic_downsampled])
+    np.random.shuffle(new_indices)
+    
+    return X_train[new_indices], y_train[new_indices]
 
 def preprocess_pipeline(X_train, X_val, y_train, threshold=0.01, corr_threshold=0.95):
     imputer = SimpleImputer(strategy='median')
@@ -312,11 +333,9 @@ def train_and_save_final_model(X_train_full, y_train_full, X_test, y_test, best_
     return final_model, test_auc, X_test_final
 
 def get_top_features_shap(model, X_data, feature_names, n=5):
-    # Usamos model.get_booster() para asegurar compatibilidad total
     explainer = shap.TreeExplainer(model.get_booster())
     shap_values = explainer.shap_values(X_data)
 
-    # Manejo de consistencia de dimensiones
     if isinstance(shap_values, list):
         shap_values_final = shap_values[1]
     elif len(shap_values.shape) == 3:
@@ -324,7 +343,6 @@ def get_top_features_shap(model, X_data, feature_names, n=5):
     else:
         shap_values_final = shap_values
 
-    # Calcular importancia global (media del valor absoluto)
     global_importances = np.abs(shap_values_final).mean(axis=0)
     feature_names = np.array(feature_names)
     
@@ -441,6 +459,19 @@ if __name__ == "__main__":
     X_train_full, X_test, y_train_full, y_test = train_test_split(
         X, y, test_size=0.20, random_state=42, stratify=y
     )
+
+    print(f"Antes del downsampling - Clase 0: {np.sum(y_train_full==0)}, Clase 1: {np.sum(y_train_full==1)}")
+    X_train_full, y_train_full = apply_downsampling(X_train_full, y_train_full)
+    print(f"Tras el downsampling - Clase 0: {np.sum(y_train_full==0)}, Clase 1: {np.sum(y_train_full==1)}")
+
+    plt.figure(figsize=(6, 4))
+    sns.countplot(x=y_train_full, palette='viridis')    
+    plt.title('Distribución de la Clase tras Downsampling (Train Set)')
+    plt.xlabel('0: No Tóxico | 1: Tóxico')
+    plt.ylabel('Número de Moléculas')
+    plt.savefig('grafica_0_balanceado.png')
+    plt.close()
+    print("Gráfica de set balanceado guardada como 'grafica_0_balanceado.png'.")
 
     print("\n--- Ejecutando Selección de Características Global (Referencia) ---")
     (X_train_reduced, X_test_reduced, imputer, v_selector, 
