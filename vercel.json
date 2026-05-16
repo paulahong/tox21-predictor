@@ -11,5 +11,10 @@
       "src": "/(.*)",
       "dest": "api/index.py"
     }
-  ]
+  ],
+  "functions": {
+    "api/index.py": {
+      "excludeFiles": "{static/**,assets/**,plots/**,metricas/**,tests/**,**/test_*.py}"
+    }
+  }
 }
