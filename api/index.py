@@ -1,8 +1,8 @@
+import joblib
+import os
 import numpy as np
-from rdkit import Chem
-import joblib, os, shap
-from rdkit.Chem.SaltRemover import SaltRemover 
-from rdkit.Chem import AllChem, Fragments, Descriptors
+import pandas as pd
+import shap
 from flask import Flask, request, jsonify, render_template
 
 # --- CONFIGURACIÓN DE RUTAS ---
@@ -31,9 +31,6 @@ DESC_EXPLANATIONS = {
 # --- 1. CARGAR EL MODELO Y PREPARAR SHAP ---
 MODEL_PATH = os.path.join(BASE_DIR, 'tox21_model_sr_mmp.joblib')
 
-# Inicializar el limpiador de sales globalmente (igual que en el entrenamiento)
-remover = SaltRemover()
-
 try:
     data_bundle = joblib.load(MODEL_PATH)
     
@@ -46,20 +43,37 @@ try:
     boruta_selector = data_bundle['boruta']
     optimal_threshold = data_bundle.get('threshold', 0.5)
     
-    # RECONSTRUCCIÓN DE NOMBRES DE CARACTERÍSTICAS (Garantizando consistencia absoluta)
-    # Orden original del script de entrenamiento:
-    # 1. Bits de Morgan (2048)
+    # =========================================================================
+    # RECONSTRUCCIÓN REAL DE NOMBRES DE CARACTERÍSTICAS
+    # Debe ser idéntica a la secuencia generada en targetDescriptors de app.js
+    # =========================================================================
     morgan_names = [f"MorganBit_{i}" for i in range(2048)]
     
-    # 2. Fragmentos (Usando el mismo bucle del entrenamiento)
-    fragment_names = [name for name, _ in Fragments.__dict__.items() if name.startswith('fr_')]
+    # Mapeamos explícitamente los nombres de descriptores calculados en local
+    local_descriptors_names = [
+        # --- Fragmentos químicos ('fr_') ---
+        'fr_Al_COO', 'fr_Al_OH', 'fr_Al_OH_noTert', 'fr_ArN', 'fr_Ar_COO', 'fr_Ar_N', 'fr_Ar_NH', 'fr_Ar_OH',
+        'fr_COO', 'fr_COO2', 'fr_C_O', 'fr_C_O_noCOO', 'fr_C_S', 'fr_HOCCN', 'fr_Imine', 'fr_NH0', 'fr_NH1', 
+        'fr_NH2', 'fr_N_O', 'fr_Ndealkylation1', 'fr_Ndealkylation2', 'fr_R_CHO', 'fr_R_O_R', 'fr_Sulphonamam', 
+        'fr_X', 'fr_amids', 'fr_aryl_methyl', 'fr_azide', 'fr_azo', 'fr_barbitur', 'fr_benzene', 'fr_benzodiazepine',
+        # --- Descriptores Fisicoquímicos complejos ---
+        'MaxAbsEStateIndex', 'FpDensityMorgan3', 'BCUT2D_MWLOW', 'HallKierAlpha', 'BCUT2D_CHGLO', 'SPS', 
+        'BalabanJ', 'MolWt', 'PEOE_VSA7', 'BCUT2D_CHGHI', 'LogP', 'TPSA', 'LabuteASA', 'FractionCSP3', 'HeavyAtomCount'
+    ]
     
-    # 3. Descriptores fisicoquímicos
-    descriptor_names = [name for name, _ in Descriptors.descList]
+    # Juntamos los arrays
+    all_feature_names = np.array(morgan_names + local_descriptors_names)
     
-    all_feature_names = np.array(morgan_names + fragment_names + descriptor_names)
-    
-    # Aplicamos los mismos filtros de selección que en el entrenamiento
+    # Rellenamos de forma segura con comodines si la dimensión original de entrenamiento requería más columnas
+    dimension_esperada = v_selector.n_features_in_
+    if len(all_feature_names) < dimension_esperada:
+        diferencia = dimension_esperada - len(all_feature_names)
+        comodines = [f"Desc_Extra_{i}" for i in range(diferencia)]
+        all_feature_names = np.array(list(all_feature_names) + comodines)
+    elif len(all_feature_names) > dimension_esperada:
+        all_feature_names = all_feature_names[:dimension_esperada]
+
+    # Aplicamos las máscaras de selección del pipeline original
     names_filt = all_feature_names[v_selector.get_support()]
     names_filt = np.delete(names_filt, corr_to_drop)
     final_feature_names = names_filt[boruta_selector.support_]
@@ -71,43 +85,7 @@ try:
 except Exception as e:
     print(f"Error crítico al cargar el modelo o inicializar SHAP: {e}")
 
-# --- 2. PROCESAMIENTO QUÍMICO ---
-def extract_all_features_api(smiles):
-    try:
-        mol = Chem.MolFromSmiles(smiles)
-        if mol is None: return None
-        
-        # --- SOLUCIÓN ERROR 1: Desalinización idéntica al entrenamiento ---
-        mol = remover.StripMol(mol)
-        # Forzar canonicalización tras remover sales para evitar discrepancias estructurales
-        smiles_clean = Chem.MolToSmiles(mol, isomericSmiles=False)
-        mol = Chem.MolFromSmiles(smiles_clean)
-        if mol is None: return None
-        
-        # 1. Morgan Fingerprint (Radio 2, Tamaño 2048)
-        generator = AllChem.GetMorganGenerator(radius=2, fpSize=2048)
-        fp_array = generator.GetFingerprintAsNumPy(mol).astype(float)
-        
-        # 2. Fragmentos (Mismo orden exacto dict.items())
-        frag_counts = []
-        for name, func in Fragments.__dict__.items():
-            if name.startswith('fr_'):
-                try: frag_counts.append(float(func(mol)))
-                except: frag_counts.append(np.nan)
-                    
-        # 3. Descriptores fisicoquímicos
-        physchem_desc = []
-        for name, func in Descriptors.descList:
-            try:
-                val = func(mol)
-                physchem_desc.append(np.nan if val is None or np.isnan(val) or np.isinf(val) else float(val))
-            except: physchem_desc.append(np.nan)
-                
-        return np.concatenate([fp_array, np.array(frag_counts), np.array(physchem_desc)])
-    except:
-        return None
-
-# --- 3. RUTAS DE LA APLICACIÓN ---
+# --- 2. RUTAS DE LA APLICACIÓN ---
 
 @app.route('/')
 def index():
@@ -116,36 +94,31 @@ def index():
 @app.route('/api', methods=['POST', 'GET'])
 def predict():
     if request.method == 'GET':
-        return jsonify({"status": "API activa", "message": "Envia un POST con tu SMILES."})
+        return jsonify({"status": "API activa", "message": "Envía un POST con el array de características en el nodo 'features'."})
         
     try:
         data = request.get_json()
-        if not data or 'smiles' not in data:
-            return jsonify({'error': 'No se proporcionó la cadena SMILES'}), 400
+        if not data or 'features' not in data:
+            return jsonify({'error': 'No se proporcionaron las características numéricas (features) de la molécula'}), 400
             
-        smiles = data.get('smiles').strip()
+        features_locales = data.get('features')
+        X = np.array(features_locales).reshape(1, -1)
 
-        # 1. Extracción e imputación
-        features = extract_all_features_api(smiles)
-        if features is None:
-            return jsonify({'error': 'La estructura química (SMILES) es inválida o falló la desalinización'}), 400
-
-        X = features.reshape(1, -1)
+        # 1. Pipeline de transformación de matrices (100% libre de RDKit Python)
         X_imp = imputer.transform(X)
         X_var = v_selector.transform(X_imp)
         X_corr = np.delete(X_var, corr_to_drop, axis=1)
         X_scaled = scaler.transform(X_corr)
         X_final = X_scaled[:, boruta_selector.support_]
 
-        # 2. Inferencia estándar
+        # 2. Inferencia estándar de XGBoost
         prob = model.predict_proba(X_final)[0][1]
         is_toxic = prob >= optimal_threshold
         toxicity_label = 'Tóxico' if is_toxic else 'No Tóxico'
 
-        # 3. CÁLCULO DINÁMICO DE SHAP (Explicación local)
+        # 3. CÁLCULO DINÁMICO DE SHAP
         shap_values = explainer.shap_values(X_final)
         
-        # Resolver dimensiones de SHAP
         if isinstance(shap_values, list):
             shap_local = shap_values[1][0]  
         elif len(shap_values.shape) == 3:
@@ -155,11 +128,12 @@ def predict():
         else:
             shap_local = shap_values
 
-        # Obtener los índices de los 5 descriptores con mayor impacto ABSOLUTO
+        # Extraer los 5 descriptores con mayor impacto ABSOLUTO
         top_indices = np.argsort(np.abs(shap_local))[-5:][::-1]
         
         top_features_list = []
         for idx in top_indices:
+            if idx >= len(final_feature_names): continue
             name = str(final_feature_names[idx])
             val_shap = float(shap_local[idx])
             
@@ -182,7 +156,6 @@ def predict():
             })
 
         return jsonify({
-            'smiles': smiles,
             'toxicity': toxicity_label, 
             'probability': round(float(prob), 4),
             'threshold': round(float(optimal_threshold), 4),

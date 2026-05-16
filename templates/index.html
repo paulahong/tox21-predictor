@@ -2,11 +2,13 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-state=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Predictor de Toxicidad Tox21</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     
     <script src="https://unpkg.com/smiles-drawer@2.0.1/dist/smiles-drawer.min.js"></script>
+    
+    <script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
 </head>
 <body>
     <div class="container">
@@ -17,8 +19,8 @@
         
         <div class="input-section">
             <label for="smiles-input">Introduce la cadena SMILES:</label>
-            <input type="text" id="smiles-input" placeholder="Ej: CC(=O)OC1=CC=CC=C1C(=O)O (Aspirina)" />
-            <button id="predict-btn" onclick="predictToxicity()">Predecir Toxicidad</button>
+            <input type="text" id="smiles-input" placeholder="Ej: CC(=O)OC1=CC=CC=C1C(=O)O (Aspirina)" disabled />
+            <button id="predict-btn" onclick="predictToxicity()" disabled>Cargando motor químico local...</button>
             
             <div class="smiles-examples">
                 <span class="example-title">Probar un ejemplo:</span>
@@ -33,7 +35,7 @@
         
         <div id="loading" class="loading hidden">
             <div class="spinner"></div>
-            <p>Calculando descriptores moleculares y generando predicción...</p>
+            <p id="loading-text">Calculando descriptores moleculares locales y generando predicción...</p>
         </div>
         
         <div id="results" class="results hidden">
