@@ -7,3 +7,6 @@ metricas/**
 explicacion_quimica_oversampling.txt
 requirements_local.txt
 .venv/**
+api/**
+requirements.txt
+tox21_model_sr_mmp.joblib
