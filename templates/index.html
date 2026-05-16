@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tox21 Toxicity Predictor</title>
+    <meta name="viewport" content="width=device-width, initial-state=1.0">
+    <title>Predictor de Toxicidad Tox21</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     
     <script src="https://unpkg.com/smiles-drawer@2.0.1/dist/smiles-drawer.min.js"></script>
@@ -11,33 +11,33 @@
 <body>
     <div class="container">
         <header>
-            <h1>Tox21 Toxicity Predictor</h1>
-            <p class="subtitle">Predict nuclear receptor (NR-AR) toxicity using machine learning</p>
+            <h1>Predictor de Toxicidad Tox21</h1>
+            <p class="subtitle">Predicción de estrés celular y alteración del potencial de membrana mitocondrial (SR-MMP) mediante aprendizaje automático</p>
         </header>
         
         <div class="input-section">
-            <label for="smiles-input">Enter SMILES String:</label>
-            <input type="text" id="smiles-input" placeholder="e.g., CC(=O)OC1=CC=CC=C1C(=O)O (Aspirin)" />
-            <button id="predict-btn" onclick="predictToxicity()">Predict Toxicity</button>
+            <label for="smiles-input">Introduce la cadena SMILES:</label>
+            <input type="text" id="smiles-input" placeholder="Ej: CC(=O)OC1=CC=CC=C1C(=O)O (Aspirina)" />
+            <button id="predict-btn" onclick="predictToxicity()">Predecir Toxicidad</button>
             
             <div class="smiles-examples">
-                <span class="example-title">Try an example:</span>
+                <span class="example-title">Probar un ejemplo:</span>
                 <div class="example-buttons">
-                    <button type="button" class="example-btn" onclick="loadExample('CC(=O)OC1=CC=CC=C1C(=O)O')">Aspirin</button>
-                    <button type="button" class="example-btn" onclick="loadExample('CN1C=NC2=C1C(=O)N(C(=O)N2C)C')">Caffeine</button>
-                    <button type="button" class="example-btn" onclick="loadExample('CCO')">Ethanol</button>
-                    <button type="button" class="example-btn" onclick="loadExample('C1=CC=C(C=C1)O')">Phenol</button>
+                    <button type="button" class="example-btn" onclick="loadExample('CC(=O)OC1=CC=CC=C1C(=O)O')">Aspirina</button>
+                    <button type="button" class="example-btn" onclick="loadExample('CN1C=NC2=C1C(=O)N(C(=O)N2C)C')">Cafeína</button>
+                    <button type="button" class="example-btn" onclick="loadExample('CCO')">Etanol</button>
+                    <button type="button" class="example-btn" onclick="loadExample('C1=CC=C(C=C1)O')">Fenol</button>
                 </div>
             </div>
         </div>
         
         <div id="loading" class="loading hidden">
             <div class="spinner"></div>
-            <p>Computing descriptors and predicting...</p>
+            <p>Calculando descriptores moleculares y generando predicción...</p>
         </div>
         
         <div id="results" class="results hidden">
-            <h2>Prediction Results</h2>
+            <h2>Resultados de la Predicción</h2>
             
             <div class="results-main-layout">
                 
@@ -56,8 +56,8 @@
             </div>
             
             <div id="descriptor-info" class="descriptor-info">
-                <h3>Top 5 Important Descriptors (SHAP Impact):</h3>
-                <p class="shap-intro">These are the molecular features that contributed most to this specific prediction:</p>
+                <h3>Top 5 Descriptores Críticos (Impacto SHAP):</h3>
+                <p class="shap-intro">Estas son las características estructurales y fisicoquímicas que más han influido en esta predicción específica:</p>
                 <ul id="shap-list" class="shap-list">
                     </ul>
             </div>

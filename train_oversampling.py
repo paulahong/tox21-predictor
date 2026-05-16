@@ -25,7 +25,7 @@ def download_tox21():
     df = pd.read_csv(url)
     return df
 
-def preprocess_tox21(df, target_col='NR-AR'):
+def preprocess_tox21(df, target_col='SR-MMP'):
     print(f"Filas iniciales: {len(df)}")
     
     df = df.dropna(subset=[target_col]).copy()
@@ -100,7 +100,7 @@ def prepare_matrix(features_list):
     
     return X
 
-def apply_oversampling(X_train, y_train, target_size=7000, random_state=42):
+def apply_oversampling(X_train, y_train, target_size=3832, random_state=42):
     """
     Repite los casos de la clase minoritaria (tóxicos) hasta alcanzar el target_size.
     """
@@ -257,7 +257,7 @@ def execute_final_purist_validation(X_train_full, y_train_full, best_params):
     
     return auc_scores
 
-def train_and_save_final_model(X_train_full, y_train_full, X_test, y_test, best_params, filename="tox21_model_ar.joblib"):
+def train_and_save_final_model(X_train_full, y_train_full, X_test, y_test, best_params, filename="tox21_model_sr_mmp.joblib"):
     print("\n--- PASO 4: Entrenamiento del Modelo de Producción Final ---")
 
     (X_train_final, X_test_final, imputer, v_selector, 
@@ -290,9 +290,9 @@ def train_and_save_final_model(X_train_full, y_train_full, X_test, y_test, best_
     plt.xlabel('Número de Árboles (Iteraciones)')
     plt.title('Curva de Aprendizaje: Diagnóstico de Overfitting')
     plt.grid(True, linestyle='--', alpha=0.6)
-    plt.savefig('grafica_4_learning_curve.png')
+    plt.savefig('grafica_4_learning_curve_oversampling.png')
     plt.close()
-    print("Gráfica de curva de aprendizaje guardada como 'grafica_4_learning_curve.png'")
+    print("Gráfica de curva de aprendizaje guardada como 'grafica_4_learning_curve_oversampling.png'")
 
     y_train_proba = final_model.predict_proba(X_train_final)[:, 1]
     optimal_t = find_optimal_threshold(y_train_full, y_train_proba)
@@ -402,7 +402,7 @@ def generate_evaluation_plots(model, X_test, y_test, feature_names, threshold):
     plt.title('Matriz de Confusión (Normalizada)')
     plt.xlabel('Predicción')
     plt.ylabel('Real')
-    plt.savefig('grafica_1_confusion.png')
+    plt.savefig('grafica_1_confusion_oversampling.png')
     plt.close()
 
     # 2. Curva Precision-Recall
@@ -413,7 +413,7 @@ def generate_evaluation_plots(model, X_test, y_test, feature_names, threshold):
     plt.ylabel('Precision')
     plt.title('Curva Precision-Recall')
     plt.legend()
-    plt.savefig('grafica_2_precision_recall.png')
+    plt.savefig('grafica_2_precision_recall_oversampling.png')
     plt.close()
 
     # 3. SHAP (Versión Limpia)
@@ -436,7 +436,7 @@ def generate_evaluation_plots(model, X_test, y_test, feature_names, threshold):
         shap.summary_plot(shap_values_to_plot, X_test, feature_names=feature_names, show=False)
         plt.title('Interpretación SHAP: Impacto de Descriptores')
         plt.tight_layout()
-        plt.savefig('grafica_3_shap.png')
+        plt.savefig('grafica_3_shap_oversampling.png')
         plt.close()
     except Exception as e:
         print(f"Aviso: No se pudo generar la gráfica SHAP detallada. Error: {e}")
@@ -445,20 +445,20 @@ def generate_evaluation_plots(model, X_test, y_test, feature_names, threshold):
 
 if __name__ == "__main__":
     df_raw = download_tox21()
-    df_clean = preprocess_tox21(df_raw, target_col='NR-AR')
+    df_clean = preprocess_tox21(df_raw, target_col='SR-MMP')
 
     # Visualización inicial del desbalance
     plt.figure(figsize=(6, 4))
-    sns.countplot(x='NR-AR', data=df_clean, palette='viridis')
-    plt.title('Distribución de la Clase (Target: NR-AR)')
+    sns.countplot(x='SR-MMP', data=df_clean, palette='viridis')
+    plt.title('Distribución de la Clase (Target: SR-MMP)')
     plt.xlabel('0: No Tóxico | 1: Tóxico')
     plt.ylabel('Número de Moléculas')
-    plt.savefig('grafica_0_desbalance.png')
+    plt.savefig('grafica_0_desbalance_oversampling.png')
     plt.close()
 
     features_list = [extract_all_features(s) for s in df_clean['smiles_clean']]
     X = prepare_matrix(features_list)
-    y = df_clean['NR-AR'].values
+    y = df_clean['SR-MMP'].values
 
     # Dividir datos ANTES del oversampling para evitar data leakage
     X_train_full, X_test, y_train_full, y_test = train_test_split(
@@ -467,8 +467,8 @@ if __name__ == "__main__":
 
     print(f"Antes del oversampling - Clase 0: {np.sum(y_train_full==0)}, Clase 1: {np.sum(y_train_full==1)}")
     
-    # APLICAMOS LA NUEVA FUNCIÓN (Target: 7000)
-    X_train_full, y_train_full = apply_oversampling(X_train_full, y_train_full, target_size=7000)
+    # APLICAMOS LA NUEVA FUNCIÓN (Target: 3832)
+    X_train_full, y_train_full = apply_oversampling(X_train_full, y_train_full, target_size=3832)
     
     print(f"Tras el oversampling  - Clase 0: {np.sum(y_train_full==0)}, Clase 1: {np.sum(y_train_full==1)}")
 
@@ -478,7 +478,7 @@ if __name__ == "__main__":
     plt.title('Distribución tras Oversampling (Train Set)')
     plt.xlabel('0: No Tóxico | 1: Tóxico')
     plt.ylabel('Número de Moléculas')
-    plt.savefig('grafica_0_balanceado.png')
+    plt.savefig('grafica_0_balanceado_oversampling.png')
     plt.close()
     print("Gráfica de set balanceado guardada.")
 
@@ -499,7 +499,7 @@ if __name__ == "__main__":
     )
 
     # Reconstrucción de nombres de características para SHAP
-    saved_data = joblib.load("tox21_model_ar.joblib")
+    saved_data = joblib.load("tox21_model_sr_mmp.joblib")
     final_threshold = saved_data.get('threshold', 0.5) 
 
     all_feature_names = np.array(
@@ -514,7 +514,7 @@ if __name__ == "__main__":
     print("\n--- Calculando importancia de descriptores con SHAP ---")
     top_10 = get_top_features_shap(final_model, X_test_final, final_feature_names, n=10)
     
-    write_descriptor_explanations(top_10[:5], filename='explicacion_quimica.txt')
+    write_descriptor_explanations(top_10[:5], filename='explicacion_quimica_oversampling.txt')
     generate_evaluation_plots(final_model, X_test_final, y_test, final_feature_names, final_threshold)
 
     print("\n--- PROCESO COMPLETADO ---")

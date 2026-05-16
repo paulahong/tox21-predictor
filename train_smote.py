@@ -100,15 +100,38 @@ def prepare_matrix(features_list):
     
     return X
 
-def preprocess_pipeline(X_train, X_val, y_train, threshold=0.01, corr_threshold=0.95):
+from imblearn.over_sampling import SMOTENC
+
+def preprocess_pipeline(X_train, X_val, y_train, threshold=0.01, corr_threshold=0.95, is_training=True):
+    # 1. Imputación (Paso obligatorio antes de SMOTE)
     imputer = SimpleImputer(strategy='median')
     X_train_prep = imputer.fit_transform(X_train)
     X_val_prep = imputer.transform(X_val)
 
+    # --- INICIO SMOTENC ---
+    y_train_res = y_train
+    if is_training:
+        print(f"Clases antes de SMOTENC: {np.bincount(y_train.astype(int))}")
+        
+        # Los Morgan Fingerprints son las primeras 2048 columnas.
+        # Marcamos estas columnas como categóricas para que SMOTENC mantenga los 0s y 1s.
+        cat_features_indices = list(range(2048))
+        
+        smote = SMOTENC(
+            categorical_features=cat_features_indices, 
+            random_state=42, 
+            sampling_strategy='auto' # Balancea 50/50
+        )
+        X_train_prep, y_train_res = smote.fit_resample(X_train_prep, y_train)
+        print(f"Clases después de SMOTENC: {np.bincount(y_train_res.astype(int))}")
+    # --- FIN SMOTENC ---
+
+    # 2. Filtro de Varianza
     v_selector = VarianceThreshold(threshold=threshold)
     X_train_prep = v_selector.fit_transform(X_train_prep)
     X_val_prep = v_selector.transform(X_val_prep)
 
+    # 3. Eliminar alta correlación
     corr_matrix = pd.DataFrame(X_train_prep).corr().abs()
     upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
     to_drop = [column for column in upper.columns if any(upper[column] > corr_threshold)]
@@ -117,22 +140,25 @@ def preprocess_pipeline(X_train, X_val, y_train, threshold=0.01, corr_threshold=
     X_val_prep = np.delete(X_val_prep, to_drop, axis=1)
     print(f"Columnas eliminadas por alta correlación: {len(to_drop)}")
 
+    # 4. Escalado (Después de SMOTE y de limpiar columnas)
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train_prep)
     X_val_scaled = scaler.transform(X_val_prep)
 
+    # 5. Boruta (Se entrena con el y_train balanceado)
     print("Iniciando Boruta (esto puede tardar unos minutos)...")
     rf = RandomForestClassifier(n_jobs=-1, class_weight='balanced', max_depth=5, random_state=42)
     boruta_selector = BorutaPy(rf, n_estimators='auto', verbose=0, random_state=42)
     
-    boruta_selector.fit(X_train_scaled, y_train)
+    boruta_selector.fit(X_train_scaled, y_train_res)
     
     X_train_final = X_train_scaled[:, boruta_selector.support_]
     X_val_final = X_val_scaled[:, boruta_selector.support_]
     
-    print(f"Boruta seleccionó {X_train_final.shape[1]} características de las {X_train_scaled.shape[1]} disponibles.")
+    print(f"Boruta seleccionó {X_train_final.shape[1]} características.")
 
-    return X_train_final, X_val_final, imputer, v_selector, to_drop, scaler, boruta_selector
+    # IMPORTANTE: Ahora devolvemos también y_train_res
+    return X_train_final, X_val_final, y_train_res, imputer, v_selector, to_drop, scaler, boruta_selector
 
 def find_optimal_threshold(y_true, y_probs):
     thresholds = np.linspace(0, 1, 100)
@@ -192,12 +218,20 @@ def execute_final_purist_validation(X_train_full, y_train_full, best_params):
     print(f"\n--- Iniciando CV Purista con parámetros: {best_params} ---")
     
     for i, (train_index, val_index) in enumerate(skf.split(X_train_full, y_train_full)):
+        # Separamos los datos crudos del fold
         X_tr_raw, X_val_raw = X_train_full[train_index], X_train_full[val_index]
         y_tr, y_val = y_train_full[train_index], y_train_full[val_index]
 
-        X_tr_ready, X_val_ready, _, _, _, _, _ = preprocess_pipeline(X_tr_raw, X_val_raw, y_tr)
+        # 1. Procesamos y balanceamos el fold de ENTRENAMIENTO.
+        # Capturamos y_tr_res porque SMOTENC habrá inventado filas nuevas.
+        # X_val_ready se procesa con los parámetros de X_tr_raw pero SIN SMOTE (is_training=True lo maneja)
+        (X_tr_ready, X_val_ready, y_tr_res, 
+         imputer, v_selector, to_drop, scaler, boruta_selector) = preprocess_pipeline(
+             X_tr_raw, X_val_raw, y_tr, is_training=True
+         )
 
-        pos_weight = np.sum(y_tr == 0) / np.sum(y_tr == 1)
+        # 2. Calculamos el pos_weight basado en los datos YA balanceados (debería dar ~1)
+        pos_weight = np.sum(y_tr_res == 0) / np.sum(y_tr_res == 1)
         
         model = xgb.XGBClassifier(
             **best_params,
@@ -206,8 +240,10 @@ def execute_final_purist_validation(X_train_full, y_train_full, best_params):
             eval_metric='logloss'
         )
 
-        model.fit(X_tr_ready, y_tr)
+        # 3. Entrenamos con los datos balanceados (y_tr_res)
+        model.fit(X_tr_ready, y_tr_res)
 
+        # 4. Predecimos sobre el set de VALIDACIÓN (que es 100% real y desbalanceado)
         y_val_proba = model.predict_proba(X_val_ready)[:, 1]
         
         best_t = find_optimal_threshold(y_val, y_val_proba)
@@ -221,10 +257,10 @@ def execute_final_purist_validation(X_train_full, y_train_full, best_params):
         auc_scores.append(auc_fold)
         mcc_scores.append(mcc_fold)
         
-        print(f"Fold {i+1} | AUC: {auc_fold:.4f} | MCC: {mcc_fold:.4f} | Umbral: {best_t:.2f}")
+        print(f"Fold {i+1} | AUC: {auc_fold:.4f} | MCC: {mcc_fold:.4f} | Umbral: {best_t:.2f} | N_train: {len(y_tr_res)}")
 
     print("\n" + "="*30)
-    print("RESUMEN VALIDACIÓN PURISTA")
+    print("RESUMEN VALIDACIÓN PURISTA (CON SMOTENC IN-FOLD)")
     print(f"Promedio AUC-ROC: {np.mean(auc_scores):.4f}")
     print(f"Promedio MCC:     {np.mean(mcc_scores):.4f}")
     print(f"Umbral Medio:     {np.mean(opt_thresholds):.2f}")
@@ -235,10 +271,15 @@ def execute_final_purist_validation(X_train_full, y_train_full, best_params):
 def train_and_save_final_model(X_train_full, y_train_full, X_test, y_test, best_params, filename="tox21_model_sr_mmp.joblib"):
     print("\n--- PASO 4: Entrenamiento del Modelo de Producción Final ---")
 
-    (X_train_final, X_test_final, imputer, v_selector, 
-     to_drop, scaler, boruta_selector) = preprocess_pipeline(X_train_full, X_test, y_train_full)
+    # 1. Procesar y balancear el set de entrenamiento completo
+    # Capturamos y_train_res porque SMOTENC genera nuevas etiquetas
+    (X_train_final, X_test_final, y_train_res, imputer, v_selector, 
+     to_drop, scaler, boruta_selector) = preprocess_pipeline(
+         X_train_full, X_test, y_train_full, is_training=True
+     )
 
-    pos_weight = np.sum(y_train_full == 0) / np.sum(y_train_full == 1)
+    # 2. Recalcular el pos_weight con los datos balanceados (será ~1.0)
+    pos_weight = np.sum(y_train_res == 0) / np.sum(y_train_res == 1)
     
     final_model = xgb.XGBClassifier(
         **best_params,              
@@ -247,9 +288,11 @@ def train_and_save_final_model(X_train_full, y_train_full, X_test, y_test, best_
         eval_metric='logloss' 
     )
 
+    # 3. Ajustar el modelo
+    # IMPORTANTE: Usamos y_train_res para el entrenamiento y para el eval_set
     final_model.fit(
-        X_train_final, y_train_full,
-        eval_set=[(X_train_final, y_train_full), (X_test_final, y_test)],
+        X_train_final, y_train_res,
+        eval_set=[(X_train_final, y_train_res), (X_test_final, y_test)],
         verbose=False 
     )
 
@@ -265,16 +308,20 @@ def train_and_save_final_model(X_train_full, y_train_full, X_test, y_test, best_
     plt.xlabel('Número de Árboles (Iteraciones)')
     plt.title('Curva de Aprendizaje: Diagnóstico de Overfitting')
     plt.grid(True, linestyle='--', alpha=0.6)
-    plt.savefig('grafica_4_learning_curve_reponderacion.png')
+    plt.savefig('grafica_4_learning_curve_smote.png')
     plt.close()
-    print("Gráfica de curva de aprendizaje guardada como 'grafica_4_learning_curve_reponderacion.png'")
+    print("Gráfica de curva de aprendizaje guardada como 'grafica_4_learning_curve_smote.png'")
 
+    # --- El resto de la lógica de gráficas se mantiene igual, PERO... ---
+    # Al calcular el umbral óptimo, usamos y_train_res
     y_train_proba = final_model.predict_proba(X_train_final)[:, 1]
-    optimal_t = find_optimal_threshold(y_train_full, y_train_proba)
+    optimal_t = find_optimal_threshold(y_train_res, y_train_proba)
     
+    # Predecir en test (datos reales)
     y_test_proba = final_model.predict_proba(X_test_final)[:, 1]
     y_test_pred = (y_test_proba >= optimal_t).astype(int) 
 
+    # --- Métricas finales ---
     test_auc = roc_auc_score(y_test, y_test_proba)
     test_mcc = matthews_corrcoef(y_test, y_test_pred) 
     
@@ -377,7 +424,7 @@ def generate_evaluation_plots(model, X_test, y_test, feature_names, threshold):
     plt.title('Matriz de Confusión (Normalizada)')
     plt.xlabel('Predicción')
     plt.ylabel('Real')
-    plt.savefig('grafica_1_confusion_reponderacion.png')
+    plt.savefig('grafica_1_confusion_smote.png')
     plt.close()
 
     # 2. Curva Precision-Recall
@@ -388,7 +435,7 @@ def generate_evaluation_plots(model, X_test, y_test, feature_names, threshold):
     plt.ylabel('Precision')
     plt.title('Curva Precision-Recall')
     plt.legend()
-    plt.savefig('grafica_2_precision_recall_reponderacion.png')
+    plt.savefig('grafica_2_precision_recall_smote.png')
     plt.close()
 
     # 3. SHAP (Versión Limpia)
@@ -411,7 +458,7 @@ def generate_evaluation_plots(model, X_test, y_test, feature_names, threshold):
         shap.summary_plot(shap_values_to_plot, X_test, feature_names=feature_names, show=False)
         plt.title('Interpretación SHAP: Impacto de Descriptores')
         plt.tight_layout()
-        plt.savefig('grafica_3_shap_reponderacion.png')
+        plt.savefig('grafica_3_shap_smote.png')
         plt.close()
     except Exception as e:
         print(f"Aviso: No se pudo generar la gráfica SHAP detallada. Error: {e}")
@@ -422,41 +469,56 @@ if __name__ == "__main__":
     df_raw = download_tox21()
     df_clean = preprocess_tox21(df_raw, target_col='SR-MMP')
 
-    # Visualización inicial del desbalance
-    plt.figure(figsize=(6, 4))
-    sns.countplot(x='SR-MMP', data=df_clean, palette='viridis')
-    plt.title('Distribución de la Clase (Target: SR-MMP)')
-    plt.xlabel('0: No Tóxico | 1: Tóxico')
-    plt.ylabel('Número de Moléculas')
-    plt.savefig('grafica_0_desbalance_reponderacion.png')
-    plt.close()
-
     features_list = [extract_all_features(s) for s in df_clean['smiles_clean']]
     X = prepare_matrix(features_list)
     y = df_clean['SR-MMP'].values
 
-    # Dividir datos ANTES del oversampling para evitar data leakage
+    # 1. Dividir datos ANTES de cualquier manipulación
     X_train_full, X_test, y_train_full, y_test = train_test_split(
         X, y, test_size=0.20, random_state=42, stratify=y
     )
 
-    print("\n--- Ejecutando Selección de Características Global ---")
-    (X_train_reduced, X_test_reduced, imputer, v_selector, 
-     to_drop, scaler, boruta_selector) = preprocess_pipeline(X_train_full, X_test, y_train_full)
+    print("\n--- Ejecutando Selección de Características con SMOTENC ---")
+    # IMPORTANTE: Capturamos y_train_balanced porque SMOTENC añade filas
+    (X_train_reduced, X_test_reduced, y_train_balanced, 
+     imputer, v_selector, to_drop, scaler, boruta_selector) = preprocess_pipeline(
+         X_train_full, X_test, y_train_full, is_training=True
+     )
 
-    # Optimización con los nuevos datos aumentados
-    best_params = optimize_hyperparameters(X_train_reduced, y_train_full)
+    # --- NUEVO: Gráfica de distribución Antes vs Después ---
+    plt.figure(figsize=(10, 5))
+    
+    plt.subplot(1, 2, 1)
+    sns.countplot(x=y_train_full, palette='viridis')
+    plt.title('Antes de SMOTENC (Original)')
+    plt.xlabel('0: No Tóxico | 1: Tóxico')
+    
+    plt.subplot(1, 2, 2)
+    sns.countplot(x=y_train_balanced, palette='magma')
+    plt.title('Después de SMOTENC (Balanceado)')
+    plt.xlabel('0: No Tóxico | 1: Tóxico')
+    
+    plt.tight_layout()
+    plt.savefig('grafica_0_comparativa_smote.png')
+    plt.close()
+    print("Gráfica comparativa guardada como 'grafica_0_comparativa_smote.png'")
 
+    # 2. Optimización (Grid Search) 
+    # Usamos los datos ya balanceados y reducidos
+    best_params = optimize_hyperparameters(X_train_reduced, y_train_balanced)
+
+    # 3. Validación Purista (CV)
+    # Esta función debe llamar a preprocess_pipeline internamente con is_training=True
     print("\n--- Validando metodología completa (Selección in-fold / Sin Leakage) ---")
     cv_scores = execute_final_purist_validation(X_train_full, y_train_full, best_params)
     avg_cv_auc = np.mean(cv_scores)
 
-    # Entrenamiento final
+    # 4. Entrenamiento final del modelo de producción
     final_model, test_auc, X_test_final = train_and_save_final_model(
         X_train_full, y_train_full, X_test, y_test, best_params
     )
 
-    # Reconstrucción de nombres de características para SHAP
+    # 5. Reconstrucción de nombres y SHAP (Se mantiene igual)
     saved_data = joblib.load("tox21_model_sr_mmp.joblib")
     final_threshold = saved_data.get('threshold', 0.5) 
 
@@ -472,10 +534,9 @@ if __name__ == "__main__":
     print("\n--- Calculando importancia de descriptores con SHAP ---")
     top_10 = get_top_features_shap(final_model, X_test_final, final_feature_names, n=10)
     
-    write_descriptor_explanations(top_10[:5], filename='explicacion_quimica_reponderacion.txt')
+    write_descriptor_explanations(top_10[:5], filename='explicacion_quimica_smote.txt')
     generate_evaluation_plots(final_model, X_test_final, y_test, final_feature_names, final_threshold)
 
     print("\n--- PROCESO COMPLETADO ---")
     print(f"1. AUC Medio de Validación (Purista): {avg_cv_auc:.4f}")
     print(f"2. AUC Final en Test (Sin Leakage): {test_auc:.4f}")
-    print(f"3. Umbral optimizado (MCC): {final_threshold:.3f}")

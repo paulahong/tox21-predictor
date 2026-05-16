@@ -1,8 +1,0 @@
-Top 5 Most Important Molecular Descriptors (SHAP Analysis)
-==========================================================
-
-1. MolLogP: Physicochemical Property (MolLogP): A molecular descriptor identified as relevant for the NR-AR toxicological endpoint.
-2. BertzCT: Physicochemical Property (BertzCT): A molecular descriptor identified as relevant for the NR-AR toxicological endpoint.
-3. FractionCSP3: Physicochemical Property (FractionCSP3): A molecular descriptor identified as relevant for the NR-AR toxicological endpoint.
-4. SMR_VSA10: Physicochemical Property (SMR_VSA10): A molecular descriptor identified as relevant for the NR-AR toxicological endpoint.
-5. SMR_VSA3: Physicochemical Property (SMR_VSA3): A molecular descriptor identified as relevant for the NR-AR toxicological endpoint.
