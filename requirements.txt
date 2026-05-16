@@ -1,4 +1,4 @@
-﻿blinker==1.9.0
+blinker==1.9.0
 Boruta==0.4.3
 click==8.3.3
 cloudpickle==3.1.2
