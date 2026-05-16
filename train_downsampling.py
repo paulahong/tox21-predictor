@@ -17,7 +17,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import train_test_split
 from rdkit.Chem import AllChem, Descriptors, Fragments
 from sklearn.feature_selection import VarianceThreshold
-from sklearn.metrics import roc_auc_score, confusion_matrix, classification_report, precision_recall_curve, auc, matthews_corrcoef, make_scorer
+from sklearn.metrics import roc_auc_score, confusion_matrix, classification_report, precision_recall_curve, auc, matthews_corrcoef, make_scorer, f1_score
 
 def download_tox21():
     url = "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/tox21.csv.gz"
@@ -25,7 +25,7 @@ def download_tox21():
     df = pd.read_csv(url)
     return df
 
-def preprocess_tox21(df, target_col='NR-AR'):
+def preprocess_tox21(df, target_col='SR-MMP'):
     print(f"Filas iniciales: {len(df)}")
     
     df = df.dropna(subset=[target_col]).copy()
@@ -104,11 +104,8 @@ def apply_downsampling(X_train, y_train, random_state=42):
     idx_toxic = np.where(y_train == 1)[0]
     idx_nontoxic = np.where(y_train == 0)[0]
     
-    # Definimos el tamaño de la clase no tóxica como el doble de la tóxica
     target_nontoxic_size = len(idx_toxic) 
     
-    # Guardamos un control por si acaso el dataset original no tuviera suficientes muestras
-    # (aunque en Tox21 sobran no tóxicos, es una buena práctica de seguridad en código)
     nontoxic_size = min(len(idx_nontoxic), target_nontoxic_size)
     
     np.random.seed(random_state)
@@ -165,6 +162,61 @@ def find_optimal_threshold(y_true, y_probs):
     best_threshold = thresholds[np.argmax(scores)]
     return best_threshold
 
+def evaluate_rf_multiple_undersampling(X_train, y_train, X_test, y_test, iterations=50):
+    print(f"\n--- Iniciando evaluación de Random Forest con {iterations} iteraciones de undersampling ---")
+    
+    results = {
+        'ROC-AUC': [],
+        'PR-AUC': [],
+        'MCC': [],
+        'F1-Score': []
+    }
+    
+    for i in range(iterations):
+        X_resampled, y_resampled = apply_downsampling(X_train, y_train, random_state=i)
+        
+        rf = RandomForestClassifier(
+            n_estimators=100, 
+            random_state=i, 
+            class_weight='balanced', 
+            n_jobs=-1
+        )
+        rf.fit(X_resampled, y_resampled)
+        
+        y_probs = rf.predict_proba(X_test)[:, 1]
+        y_pred = rf.predict(X_test)
+        
+        roc_auc = roc_auc_score(y_test, y_probs)
+        precision, recall, _ = precision_recall_curve(y_test, y_probs)
+        pr_auc = auc(recall, precision)
+        mcc = matthews_corrcoef(y_test, y_pred)
+        f1 = f1_score(y_test, y_pred)
+        
+        results['ROC-AUC'].append(roc_auc)
+        results['PR-AUC'].append(pr_auc)
+        results['MCC'].append(mcc)
+        results['F1-Score'].append(f1)
+        
+        if (i + 1) % 10 == 0:
+            print(f"  > Iteración {i + 1}/{iterations} completada.")
+
+    df_results = pd.DataFrame(results)
+    
+    print("\nResumen de Métricas tras 50 iteraciones:")
+    print(df_results.describe().T[['mean', 'std', 'min', 'max']])
+    
+    plt.figure(figsize=(10, 6))
+    sns.boxplot(data=df_results, palette="Set2")
+    plt.title(f'Distribución de Métricas - Random Forest ({iterations} Iteraciones Undersampling)', fontsize=14)
+    plt.ylabel('Puntuación')
+    plt.grid(True, linestyle='--', alpha=0.7)
+    plt.savefig('grafica_5_undersampling_boxplot.png')
+    plt.close()
+    
+    print("\nÉXITO: Boxplot generado como 'grafica_5_undersampling_boxplot.png'")
+    
+    return df_results
+
 def optimize_hyperparameters(X_train, y_train):
     print("\n--- PASO 2: Iniciando GridSearch (Optimización del Motor) ---")
     
@@ -183,8 +235,7 @@ def optimize_hyperparameters(X_train, y_train):
     xgb_base = xgb.XGBClassifier(
         scale_pos_weight=pos_weight,
         random_state=42,
-        eval_metric='logloss',
-        use_label_encoder=False
+        eval_metric='logloss'
     )
     
     grid_search = GridSearchCV(
@@ -333,7 +384,12 @@ def train_and_save_final_model(X_train_full, y_train_full, X_test, y_test, best_
     return final_model, test_auc, X_test_final
 
 def get_top_features_shap(model, X_data, feature_names, n=5):
-    explainer = shap.TreeExplainer(model.get_booster())
+    # --- PARCHE PARA EL ERROR DE XGBOOST 2.0+ ---
+    booster = model.get_booster()
+    booster.set_param({'base_score': 0.5})
+    # --------------------------------------------
+    
+    explainer = shap.TreeExplainer(booster)
     shap_values = explainer.shap_values(X_data)
 
     if isinstance(shap_values, list):
@@ -386,11 +442,9 @@ def write_descriptor_explanations(top_descriptors, filename='explicacion_quimica
 def generate_evaluation_plots(model, X_test, y_test, feature_names, threshold):
     print("\n--- Generando gráficas para la presentación ---")
     
-    # Predecir probabilidades una sola vez para eficiencia
     probas = model.predict_proba(X_test)[:, 1]
     y_pred = (probas >= threshold).astype(int)
 
-    # 1. Matriz de Confusión
     plt.figure(figsize=(6, 5))
     cm = confusion_matrix(y_test, y_pred, normalize='true')
     sns.heatmap(cm, annot=True, fmt=".2%", cmap='Blues', 
@@ -401,7 +455,6 @@ def generate_evaluation_plots(model, X_test, y_test, feature_names, threshold):
     plt.savefig('grafica_1_confusion.png')
     plt.close()
 
-    # 2. Curva Precision-Recall
     plt.figure(figsize=(6, 5))
     precision, recall, _ = precision_recall_curve(y_test, probas)
     plt.plot(recall, precision, color='darkorange', lw=2, label=f'PR-AUC = {auc(recall, precision):.2f}')
@@ -412,14 +465,15 @@ def generate_evaluation_plots(model, X_test, y_test, feature_names, threshold):
     plt.savefig('grafica_2_precision_recall.png')
     plt.close()
 
-    # 3. SHAP (Versión Limpia)
     try:
-        # Usamos el modelo directamente. SHAP maneja la extracción del Booster.
-        explainer = shap.TreeExplainer(model)
+        # --- PARCHE PARA EL ERROR DE XGBOOST 2.0+ ---
+        booster = model.get_booster()
+        booster.set_param({'base_score': 0.5})
+        explainer = shap.TreeExplainer(booster)
+        # --------------------------------------------
+        
         shap_values = explainer.shap_values(X_test)
         
-        # Ajuste de dimensiones: XGBoost en clasificación binaria a veces devuelve 
-        # una lista [shap_neg, shap_pos] o una matriz 2D/3D.
         if isinstance(shap_values, list):
             shap_values_to_plot = shap_values[1]
         elif len(shap_values.shape) == 3:
@@ -428,7 +482,6 @@ def generate_evaluation_plots(model, X_test, y_test, feature_names, threshold):
             shap_values_to_plot = shap_values
 
         plt.figure(figsize=(10, 6))
-        # Importante: X_test debe ser un array de NumPy si feature_names se pasa aparte
         shap.summary_plot(shap_values_to_plot, X_test, feature_names=feature_names, show=False)
         plt.title('Interpretación SHAP: Impacto de Descriptores')
         plt.tight_layout()
@@ -439,13 +492,14 @@ def generate_evaluation_plots(model, X_test, y_test, feature_names, threshold):
     
     print("Gráficas guardadas correctamente.")
 
+
 if __name__ == "__main__":
     df_raw = download_tox21()
-    df_clean = preprocess_tox21(df_raw, target_col='NR-AR')
+    df_clean = preprocess_tox21(df_raw, target_col='SR-MMP')
 
     plt.figure(figsize=(6, 4))
-    sns.countplot(x='NR-AR', data=df_clean, palette='viridis')
-    plt.title('Distribución de la Clase (Target: NR-AR)')
+    sns.countplot(x='SR-MMP', data=df_clean, palette='viridis')
+    plt.title('Distribución de la Clase (Target: SR-MMP)')
     plt.xlabel('0: No Tóxico | 1: Tóxico')
     plt.ylabel('Número de Moléculas')
     plt.savefig('grafica_0_desbalance.png')
@@ -454,18 +508,32 @@ if __name__ == "__main__":
 
     features_list = [extract_all_features(s) for s in df_clean['smiles_clean']]
     X = prepare_matrix(features_list)
-    y = df_clean['NR-AR'].values
+    y = df_clean['SR-MMP'].values
 
+    # Separamos en Train y Test desde el principio
     X_train_full, X_test, y_train_full, y_test = train_test_split(
         X, y, test_size=0.20, random_state=42, stratify=y
     )
 
-    print(f"Antes del downsampling - Clase 0: {np.sum(y_train_full==0)}, Clase 1: {np.sum(y_train_full==1)}")
-    X_train_full, y_train_full = apply_downsampling(X_train_full, y_train_full)
-    print(f"Tras el downsampling - Clase 0: {np.sum(y_train_full==0)}, Clase 1: {np.sum(y_train_full==1)}")
+    print("\n--- Ejecutando Selección de Características Global (Pipeline) ---")
+    (X_train_reduced, X_test_reduced, imputer, v_selector, 
+     to_drop, scaler, boruta_selector) = preprocess_pipeline(X_train_full, X_test, y_train_full)
+
+    # 50 iteraciones de Undersampling para validación de robustez
+    df_rf_metrics = evaluate_rf_multiple_undersampling(
+        X_train=X_train_reduced, 
+        y_train=y_train_full, 
+        X_test=X_test_reduced, 
+        y_test=y_test, 
+        iterations=50
+    )
+
+    print(f"\nAntes del downsampling (Original) - Clase 0: {np.sum(y_train_full==0)}, Clase 1: {np.sum(y_train_full==1)}")
+    X_train_down, y_train_down = apply_downsampling(X_train_reduced, y_train_full, random_state=42)
+    print(f"Tras el downsampling (Original) - Clase 0: {np.sum(y_train_down==0)}, Clase 1: {np.sum(y_train_down==1)}")
 
     plt.figure(figsize=(6, 4))
-    sns.countplot(x=y_train_full, palette='viridis')    
+    sns.countplot(x=y_train_down, palette='viridis')    
     plt.title('Distribución de la Clase tras Downsampling (Train Set)')
     plt.xlabel('0: No Tóxico | 1: Tóxico')
     plt.ylabel('Número de Moléculas')
@@ -473,11 +541,8 @@ if __name__ == "__main__":
     plt.close()
     print("Gráfica de set balanceado guardada como 'grafica_0_balanceado.png'.")
 
-    print("\n--- Ejecutando Selección de Características Global (Referencia) ---")
-    (X_train_reduced, X_test_reduced, imputer, v_selector, 
-     to_drop, scaler, boruta_selector) = preprocess_pipeline(X_train_full, X_test, y_train_full)
-
-    best_params = optimize_hyperparameters(X_train_reduced, y_train_full)
+    # Optimización y entrenamiento del modelo Final
+    best_params = optimize_hyperparameters(X_train_down, y_train_down)
 
     print("\n--- Validando metodología completa (Selección in-fold / Sin Leakage) ---")
     cv_scores = execute_final_purist_validation(X_train_full, y_train_full, best_params)
