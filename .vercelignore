@@ -6,3 +6,4 @@ plots/**
 metricas/**
 explicacion_quimica_oversampling.txt
 requirements_local.txt
+.venv/**
