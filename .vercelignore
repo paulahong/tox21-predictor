@@ -2,7 +2,7 @@ train_downsampling.py
 train_oversampling.py
 train_reponderacion.py
 train_smote.py
-plots/
-metricas/
+plots/**
+metricas/**
 explicacion_quimica_oversampling.txt
 requirements_local.txt
