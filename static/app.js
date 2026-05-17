@@ -1,12 +1,12 @@
 // app.js – Handles UI interactions and API communication
 
 // URL directa de tu Space de Hugging Face
-// REEMPLAZA esta dirección por la "Direct URL" real de tu servidor en Hugging Face
 const HUGGING_FACE_API_URL = "https://paulahong-tox21-predictor-api.hf.space/api";
 
 // Utility to show/hide elements
 function toggleVisibility(id, show) {
     const el = document.getElementById(id);
+    if (!el) return;
     if (show) {
         el.classList.remove('hidden');
     } else {
@@ -14,7 +14,7 @@ function toggleVisibility(id, show) {
     }
 }
 
-// Show loading spinner
+// Show loading spinner (Animación molecular activa)
 function showLoading() {
     toggleVisibility('loading', true);
     toggleVisibility('results', false);
@@ -37,7 +37,9 @@ function showError(message) {
     }
 
     const errEl = document.getElementById('error');
-    errEl.textContent = cleanMessage;
+    if (errEl) {
+        errEl.textContent = cleanMessage;
+    }
     toggleVisibility('error', true);
 }
 
@@ -85,60 +87,63 @@ function displayResult(toxicity, probability, topFeatures, smiles) {
     // --- 2. CONFIGURACIÓN DEL VEREDICTO DE TOXICIDAD ---
     const isToxic = toxicity.includes('Tóxico') && !toxicity.startsWith('No');
 
-    labelEl.textContent = toxicity;
+    if (labelEl) labelEl.textContent = toxicity;
     
     if (isToxic) {
-        labelEl.className = 'toxicity-label toxic';
-        resultBox.className = 'prediction-box toxic-border';
-        barEl.style.backgroundColor = '#e74c3c'; 
+        if (labelEl) labelEl.className = 'toxicity-label toxic';
+        if (resultBox) resultBox.className = 'prediction-box toxic-border';
     } else {
-        labelEl.className = 'toxicity-label nontoxic';
-        resultBox.className = 'prediction-box nontoxic-border';
-        barEl.style.backgroundColor = '#27ae60'; 
+        if (labelEl) labelEl.className = 'toxicity-label nontoxic';
+        if (resultBox) resultBox.className = 'prediction-box nontoxic-border';
     }
 
     // --- BARRA DE PROBABILIDAD CON DEGRADADO DINÁMICO ---
     const percent = (probability * 100).toFixed(1);
-    barEl.style.width = `${percent}%`;
-    probText.textContent = `Probability of toxicity: ${percent}%`;
-
-    const hue = ((1 - probability) * 120).toString(10); 
-    barEl.style.background = `linear-gradient(to right, hsl(${hue}, 85%, 55%), hsl(${hue}, 85%, 40%))`;
+    if (barEl) {
+        barEl.style.width = `${percent}%`;
+        const hue = ((1 - probability) * 120).toString(10); 
+        barEl.style.background = `linear-gradient(to right, hsl(${hue}, 85%, 55%), hsl(${hue}, 85%, 40%))`;
+    }
+    if (probText) probText.textContent = `Probability of toxicity: ${percent}%`;
 
     // --- 3. ACTUALIZACIÓN DINÁMICA DE SHAP ---
-    shapList.innerHTML = '';
+    if (shapList) {
+        shapList.innerHTML = '';
 
-    if (topFeatures && topFeatures.length > 0) {
-        topFeatures.forEach(feat => {
-            const li = document.createElement('li');
-            
-            const isPositive = feat.shap_value > 0;
-            const impactClass = isPositive ? 'shap-increase' : 'shap-decrease';
-            const sign = isPositive ? '+' : '';
+        if (topFeatures && topFeatures.length > 0) {
+            topFeatures.forEach(feat => {
+                const li = document.createElement('li');
+                
+                const isPositive = feat.shap_value > 0;
+                const impactClass = isPositive ? 'shap-increase' : 'shap-decrease';
+                const sign = isPositive ? '+' : '';
 
-            li.innerHTML = `
-                <div class="shap-item">
-                    <div class="shap-header">
-                        <span class="shap-name"><strong>${feat.descriptor}</strong></span>
-                        <span class="shap-badge ${impactClass}">
-                            ${feat.impact} (${sign}${feat.shap_value.toFixed(4)})
-                        </span>
+                li.innerHTML = `
+                    <div class="shap-item">
+                        <div class="shap-header">
+                            <span class="shap-name"><strong>${feat.descriptor}</strong></span>
+                            <span class="shap-badge ${impactClass}">
+                                ${feat.impact} (${sign}${feat.shap_value.toFixed(4)})
+                            </span>
+                        </div>
+                        <p class="shap-desc">${feat.explanation}</p>
                     </div>
-                    <p class="shap-desc">${feat.explanation}</p>
-                </div>
-            `;
-            shapList.appendChild(li);
-        });
-    } else {
-        shapList.innerHTML = '<li>No SHAP descriptors available for this prediction.</li>';
+                `;
+                shapList.appendChild(li);
+            });
+        } else {
+            shapList.innerHTML = '<li>No SHAP descriptors available for this prediction.</li>';
+        }
     }
     
     toggleVisibility('results', true);
 }
 
-// Main prediction function - MODIFICADA PARA CONECTAR CON HUGGING FACE
+// Main prediction function - CONECTADA CON HUGGING FACE
 async function predictToxicity() {
     const smilesInput = document.getElementById('smiles-input');
+    if (!smilesInput) return;
+    
     const smiles = smilesInput.value.trim();
 
     if (!smiles) {
@@ -149,7 +154,6 @@ async function predictToxicity() {
     showLoading();
 
     try {
-        // Hacemos el envío de datos directamente a la URL externa de tu API
         const response = await fetch(HUGGING_FACE_API_URL, {
             method: 'POST',
             headers: {
@@ -169,21 +173,21 @@ async function predictToxicity() {
         const probability = data.probability;
         const topFeatures = data.top_shap_features; 
 
-        // Enviamos los datos procesados por Python a la interfaz gráfica
+        // Ocultamos la animación justo antes de pintar los resultados renderizados
+        hideLoading();
         displayResult(toxicity, probability, topFeatures, smiles);
 
     } catch (err) {
         console.error('Prediction error:', err);
-        showError(err.message || 'An unexpected error occurred.');
-    } finally {
         hideLoading();
+        showError(err.message || 'An unexpected error occurred.');
     }
 }
 
 // Función para rellenar automáticamente el SMILES de ejemplo
 function loadExample(smiles) {
     const smilesInput = document.getElementById('smiles-input');
-    smilesInput.value = smiles;
+    if (smilesInput) smilesInput.value = smiles;
     
     toggleVisibility('results', false);
     toggleVisibility('error', false);

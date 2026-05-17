@@ -21,19 +21,31 @@
             <button id="predict-btn" onclick="predictToxicity()">Predecir Toxicidad</button>
             
             <div class="smiles-examples">
-                <span class="example-title">Probar un ejemplo:</span>
+                <span class="example-title">Probar controles negativos (No Tóxicos):</span>
                 <div class="example-buttons">
                     <button type="button" class="example-btn" onclick="loadExample('CC(=O)OC1=CC=CC=C1C(=O)O')">Aspirina</button>
                     <button type="button" class="example-btn" onclick="loadExample('CN1C=NC2=C1C(=O)N(C(=O)N2C)C')">Cafeína</button>
                     <button type="button" class="example-btn" onclick="loadExample('CCO')">Etanol</button>
                     <button type="button" class="example-btn" onclick="loadExample('C1=CC=C(C=C1)O')">Fenol</button>
                 </div>
+                
+                <span class="example-title" style="margin-top: 12px; display: block;">Probar controles positivos (Tóxicos en SR-MMP):</span>
+                <div class="example-buttons">
+                    <button type="button" class="example-btn toxic-example-btn" onclick="loadExample('CC12CCC3C(C1CCC2O)CCC4C3CCC(=O)C4')">Testosterona</button>
+                    <button type="button" class="example-btn toxic-example-btn" onclick="loadExample('C1=CC(=CC=C1Cl)NN=C(C#N)C#N')">CCCP (Desacoplador)</button>
+                </div>
             </div>
         </div>
         
         <div id="loading" class="loading hidden">
-            <div class="spinner"></div>
-            <p>Calculando descriptores moleculares y generando predicción...</p>
+            <div class="molecule-spinner">
+                <div class="atom atom-1"></div>
+                <div class="atom atom-2"></div>
+                <div class="atom atom-3"></div>
+                <div class="bond bond-1"></div>
+                <div class="bond bond-2"></div>
+            </div>
+            <p class="loading-text">Procesando estructura y calculando impacto SHAP...</p>
         </div>
         
         <div id="results" class="results hidden">

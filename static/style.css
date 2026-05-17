@@ -7,21 +7,24 @@
 }
 
 body {
-    background-color: #f5f5f5;
+    /* CORREGIDO: Fondo negro/oscuro tecnológico para hacer resaltar el contenedor blanco */
+    background-color: #121824; 
     color: #333;
     line-height: 1.6;
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 1rem; /* Espaciado extra en pantallas pequeñas */
 }
 
 /* Container */
 .container {
-    background: #fff;
+    background: #ffffff; /* Se mantiene en blanco para un contraste perfecto */
     padding: 2rem 2.5rem;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-radius: 12px; /* Un poco más redondeado para un look más moderno */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); /* Sombra optimizada para fondos oscuros */
+    border: 1px solid rgba(255, 255, 255, 0.1);
     max-width: 750px; /* Ancho optimizado para el visor 2D y SHAP */
     width: 100%;
 }
@@ -149,30 +152,112 @@ header .subtitle {
     border-color: #a4b0be;
 }
 
+/* Variante opcional para diferenciar los botones de control positivo */
+.toxic-example-btn {
+    border-color: #f59e0b;
+}
+
+.toxic-example-btn:hover {
+    background-color: #fef3c7;
+    color: #d97706;
+    border-color: #d97706;
+}
+
 .example-btn:active {
     transform: scale(0.97);
 }
 
-/* Loading Spinner */
+/* --- ANIMACIÓN MOLECULAR DE CARGA (OPCIÓN 3 CORREGIDA) --- */
 .loading {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.5rem;
-    margin-top: 1rem;
+    margin-top: 1.5rem;
 }
 
-.spinner {
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #2980b9;
+.molecule-spinner {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    margin: 10px auto;
+    animation: rotateMolecule 4s infinite linear;
+}
+
+.atom {
+    position: absolute;
     border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    animation: spin 1s linear infinite;
+    background-color: #2980b9; /* Sincronizado con el azul de la web */
+    animation: pulseAtom 1.5s infinite ease-in-out;
 }
 
-@keyframes spin {
-    to { transform: rotate(360deg); }
+/* Átomo Central (Núcleo) */
+.atom-1 {
+    width: 20px;
+    height: 20px;
+    top: 30px;
+    left: 30px;
+    background-color: #27ae60; /* Verde esmeralda */
+}
+
+/* Átomos Satélites */
+.atom-2 {
+    width: 14px;
+    height: 14px;
+    top: 0;
+    left: 33px;
+    animation-delay: 0.3s;
+}
+
+.atom-3 {
+    width: 16px;
+    height: 16px;
+    bottom: 5px;
+    left: 10px;
+    animation-delay: 0.6s;
+    background-color: #8e44ad; /* Tono morado para el tercer elemento */
+}
+
+/* Enlaces Químicos (Líneas conectoras moleculares) */
+.bond {
+    position: absolute;
+    background-color: #ced6e0;
+    transform-origin: top left;
+    z-index: -1;
+}
+
+.bond-1 {
+    width: 2px;
+    height: 32px;
+    top: 10px;
+    left: 40px;
+}
+
+.bond-2 {
+    width: 2px;
+    height: 30px;
+    top: 40px;
+    left: 40px;
+    transform: rotate(135deg);
+}
+
+/* Texto debajo del clúster molecular */
+.loading-text {
+    font-size: 0.95rem;
+    color: #4b5563;
+    font-style: italic;
+    font-weight: 500;
+}
+
+/* Keyframes para los motores de animación */
+@keyframes rotateMolecule {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes pulseAtom {
+    0%, 100% { transform: scale(1); opacity: 0.9; }
+    50% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 10px rgba(41, 128, 185, 0.4); }
 }
 
 /* Results */
@@ -204,7 +289,7 @@ header .subtitle {
     }
 }
 
-/* --- VISOR DE LA MOLÉCULA (Rediseñado más compacto) --- */
+/* --- VISOR DE LA MOLÉCULA --- */
 .molecule-viewer {
     background-color: #ffffff;
     border: 1px solid #e1e8ed;
@@ -224,7 +309,7 @@ header .subtitle {
     height: auto;
 }
 
-/* --- CAJA DE PREDICCIÓN (Adaptada para crecer al lado de la molécula) --- */
+/* --- CAJA DE PREDICCIÓN --- */
 .prediction-box {
     border: 2px solid #bdc3c7;
     border-radius: 6px;
@@ -275,8 +360,6 @@ header .subtitle {
     height: 12px;
 }
 
-/* CORREGIDO: La barra ya no tiene un background-color estático azul/rojo/verde.
-   Ahora se inicializa transparente y su color dinámico de degradado se aplica en app.js */
 .probability-bar {
     height: 100%;
     width: 0%;
