@@ -45,32 +45,33 @@ function showError(message) {
 
 // Muestra los resultados de la predicción, renderiza la molécula 2D e inyecta impactos SHAP
 function displayResult(toxicity, probability, topFeatures, smiles) {
-    const labelEl = document.getElementById('toxicity-label');
+    const verdictEl = document.getElementById('toxicity-verdict');
+    const cardEl = document.getElementById('prediction-card');
     const barEl = document.getElementById('probability-bar');
-    const probText = document.getElementById('probability-text');
-    const resultBox = document.getElementById('prediction-result');
+    const percentEl = document.getElementById('probability-text');
+    const summaryEl = document.getElementById('quick-summary');
     const shapList = document.getElementById('shap-list');
 
-    // --- 1. RENDERIZADO DE LA ESTRUCTURA QUÍMICA 2D (SmilesDrawer) ---
+    // --- 1. RENDERIZADO DE LA ESTRUCTURA QUÍMICA 2D REESCALADA ---
     try {
         const smilesDrawer = new SmilesDrawer.Drawer({
-            width: 220, 
-            height: 220, 
-            bondThickness: 1.5,
-            bondLength: 15,
-            fontSizeLarge: 10,
-            fontSizeSmall: 7,
+            width: 140, 
+            height: 140, 
+            bondThickness: 1.3,
+            bondLength: 13,
+            fontSizeLarge: 9,
+            fontSizeSmall: 6,
             themes: {
                 light: {
-                    C: '#2c3e50',
-                    O: '#e74c3c',
-                    N: '#3498db',
-                    F: '#27ae60',
-                    Cl: '#27ae60',
-                    Br: '#d35400',
-                    I: '#8e44ad',
-                    S: '#f1c40f',
-                    P: '#e67e22'
+                    C: '#ffffff', // Blanco/claro para resaltar sobre el fondo oscuro pizarra de la tarjeta
+                    O: '#f87171',
+                    N: '#60a5fa',
+                    F: '#34d399',
+                    Cl: '#34d399',
+                    Br: '#fb923c',
+                    I: '#c084fc',
+                    S: '#fbbf24',
+                    P: '#f97316'
                 }
             }
         });
@@ -84,29 +85,44 @@ function displayResult(toxicity, probability, topFeatures, smiles) {
         console.error('Error al inicializar o dibujar con SmilesDrawer:', e);
     }
 
-    // --- 2. CONFIGURACIÓN DEL VEREDICTO DE TOXICIDAD ---
-    const isToxic = toxicity.includes('Tóxico') && !toxicity.startsWith('No');
-
-    if (labelEl) labelEl.textContent = toxicity;
-    
-    if (isToxic) {
-        if (labelEl) labelEl.className = 'toxicity-label toxic';
-        if (resultBox) resultBox.className = 'prediction-box toxic-border';
-    } else {
-        if (labelEl) labelEl.className = 'toxicity-label nontoxic';
-        if (resultBox) resultBox.className = 'prediction-box nontoxic-border';
-    }
-
-    // --- BARRA DE PROBABILIDAD CON DEGRADADO DINÁMICO ---
+    // --- 2. CONFIGURACIÓN COMPACTA Y LÓGICA TRIPLE DEL SEMÁFORO (0-35, 35-65, >65) ---
     const percent = (probability * 100).toFixed(1);
-    if (barEl) {
-        barEl.style.width = `${percent}%`;
-        const hue = ((1 - probability) * 120).toString(10); 
-        barEl.style.background = `linear-gradient(to right, hsl(${hue}, 85%, 55%), hsl(${hue}, 85%, 40%))`;
-    }
-    if (probText) probText.textContent = `Probability of toxicity: ${percent}%`;
+    
+    if (verdictEl) verdictEl.textContent = toxicity;
+    if (percentEl) percentEl.textContent = `${percent}%`;
+    if (barEl) barEl.style.width = `${percent}%`;
 
-    // --- 3. ACTUALIZACIÓN DINÁMICA DE SHAP ---
+    // Reseteamos las clases de estado previas de la tarjeta y veredicto
+    cardEl.classList.remove('is-toxic', 'is-neutral', 'is-nontoxic');
+    if (verdictEl) verdictEl.className = '';
+
+    // Evaluación matemática por rangos
+    if (probability <= 0.35) {
+        // VERDE: Estable / No Tóxico
+        cardEl.classList.add('is-nontoxic'); 
+        if (verdictEl) verdictEl.classList.add('text-nontoxic');
+        if (barEl) barEl.style.backgroundColor = '#10b981';
+        if (percentEl) percentEl.style.color = '#10b981';
+        if (summaryEl) summaryEl.textContent = "Estructura molecular estable. No se detectan factores críticos de inducción de estrés oxidativo celulares.";
+    } 
+    else if (probability > 0.35 && probability <= 0.65) {
+        // NARANJA: Advertencia / Zona Gris Neutra
+        cardEl.classList.add('is-neutral');
+        if (verdictEl) verdictEl.className = ''; // Color neutro por defecto o heredado
+        if (barEl) barEl.style.backgroundColor = '#f59e0b'; // Color ámbar/naranja
+        if (percentEl) percentEl.style.color = '#f59e0b';
+        if (summaryEl) summaryEl.textContent = "Toxicidad indeterminada. Se recomienda precaución; presenta rasgos estructurales moderadamente reactivos.";
+    } 
+    else {
+        // ROJO: Crítico / Tóxico
+        cardEl.classList.add('is-toxic');
+        if (verdictEl) verdictEl.classList.add('text-toxic');
+        if (barEl) barEl.style.backgroundColor = '#ef4444';
+        if (percentEl) percentEl.style.color = '#ef4444';
+        if (summaryEl) summaryEl.textContent = "Alta probabilidad de que este compuesto altere el potencial eléctrico de las membranas mitocondriales.";
+    }
+
+    // --- 3. ACTUALIZACIÓN DINÁMICA DE SHAP (INTEGRA, SIN MODIFICACIONES) ---
     if (shapList) {
         shapList.innerHTML = '';
 
@@ -118,7 +134,6 @@ function displayResult(toxicity, probability, topFeatures, smiles) {
                 const impactClass = isPositive ? 'shap-increase' : 'shap-decrease';
                 const sign = isPositive ? '+' : '';
 
-                // MODIFICACIÓN CRÍTICA: Llamamos al glosario externo pasándole el nombre del descriptor
                 const descripcionTraducida = obtenerDescripcionDescriptor(feat.descriptor);
 
                 li.innerHTML = `
@@ -150,7 +165,7 @@ async function predictToxicity() {
     const smiles = smilesInput.value.trim();
 
     if (!smiles) {
-        showError('Please enter a SMILES string.');
+        showError('Por favor, introduce una cadena SMILES válida.');
         return;
     }
 
@@ -186,7 +201,7 @@ async function predictToxicity() {
     } catch (err) {
         console.error('Prediction error:', err);
         hideLoading();
-        showError(err.message || 'An unexpected error occurred.');
+        showError(err.message || 'Ha ocurrido un error inesperado al procesar la molécula.');
     }
 }
 

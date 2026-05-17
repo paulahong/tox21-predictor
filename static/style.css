@@ -29,7 +29,7 @@ body {
     width: 100%;
 }
 
-/* --- HEADER CON WATERMARK (Opción L) --- */
+/* --- HEADER CON WATERMARK --- */
 header {
     position: relative;
     text-align: center;
@@ -79,81 +79,26 @@ header .subtitle {
     margin: 0 auto;
 }
 
-/* --- CAJA DE LA TERMINAL PARA EL INPUT --- */
-.terminal-container {
-    background-color: #1e293b; /* Gris oscuro pizarra tipo consola */
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+/* --- SECCIÓN DE BÚSQUEDA / ENTRADA LIMPIA (SIN TERMINAL) --- */
+.search-container {
     margin-bottom: 1.8rem;
-    border: 1px solid #334155;
+    background: #f8fafc; /* Un fondo gris claro muy sutil para delimitar la zona */
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
 }
 
-.terminal-top-bar {
-    background-color: #0f172a; /* Franja superior más oscura */
-    padding: 0.5rem 0.8rem;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    position: relative;
-}
-
-/* Botones simulados del sistema de ventanas */
-.terminal-dot {
-    width: 11px;
-    height: 11px;
-    border-radius: 50%;
-    display: inline-block;
-}
-
-.dot-close { background-color: #ef4444; }
-.dot-minimize { background-color: #f59e0b; }
-.dot-maximize { background-color: #10b981; }
-
-.terminal-title {
-    color: #94a3b8;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 0.75rem;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    font-weight: bold;
-}
-
-.terminal-body {
-    padding: 1.2rem;
-}
-
-/* Ajustes de tipografía de consola dentro de la terminal */
-.terminal-prompt {
-    color: #4ade80; /* Verde brillante clásico de Linux */
-    font-family: 'Courier New', Courier, monospace;
-    font-weight: bold;
-}
-
-.terminal-cursor {
-    color: #38bdf8;
-    font-weight: bold;
-    animation: blinkCursor 1s infinite;
-}
-
-@keyframes blinkCursor {
-    0%, 100% { opacity: 0; }
-    50% { opacity: 1; }
-}
-
-/* Input Section Inside Terminal */
 .input-section {
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
 }
 
-.input-section label {
-    font-weight: normal;
+.search-label {
+    font-weight: bold;
     font-size: 0.9rem;
-    color: #e2e8f0; /* Texto claro para contrastar sobre el fondo oscuro */
-    font-family: 'Courier New', Courier, monospace;
+    color: #334155;
+    margin-bottom: 0.2rem;
 }
 
 /* Fila contenedora para alinear el input y el botón en paralelo */
@@ -173,32 +118,30 @@ header .subtitle {
 
 #smiles-input {
     padding: 0.8rem 1rem;
-    border: 1px solid #475569;
+    border: 1px solid #cbd5e1;
     border-radius: 6px;
     font-size: 0.95rem;
     width: 100%;
-    background-color: #0f172a; /* Input oscuro integrado */
-    color: #38bdf8; /* Texto cyan tecnológico al escribir */
-    font-family: 'Courier New', Courier, monospace;
+    background-color: #ffffff; /* Input blanco limpio */
+    color: #1e293b; /* Texto oscuro legible al escribir */
     transition: all 0.25s ease-in-out;
 }
 
 #smiles-input::placeholder {
-    color: #64748b;
+    color: #94a3b8;
 }
 
-/* Enfoque optimizado para modo consola */
+/* Enfoque enfocado limpio y moderno */
 #smiles-input:focus {
-    background-color: #0f172a;
     border-color: #38bdf8;
     outline: none;
-    box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.35);
 }
 
 #predict-btn {
     padding: 0.8rem 1.5rem;
-    background-color: #38bdf8; /* Azul cyan a juego con la terminal */
-    color: #0f172a;
+    background-color: #38bdf8; /* Azul cyan moderno */
+    color: #ffffff;
     border: none;
     border-radius: 6px;
     font-size: 0.95rem;
@@ -210,28 +153,33 @@ header .subtitle {
 
 #predict-btn:hover {
     background-color: #0ea5e9;
-    box-shadow: 0 2px 8px rgba(56, 189, 248, 0.4);
+    box-shadow: 0 2px 8px rgba(56, 189, 248, 0.3);
 }
 
 #predict-btn:active {
     transform: scale(0.98);
 }
 
-/* --- BOTONES DE EJEMPLO ADAPTADOS A LA TERMINAL --- */
+/* --- BOTONES DE EJEMPLO ADAPTADOS AL ENTORNO LIMPIO --- */
 .smiles-examples {
     margin-top: 0.8rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    border-top: 1px solid #334155;
+    gap: 0.8rem;
+    border-top: 1px solid #e2e8f0;
     padding-top: 0.8rem;
 }
 
+.example-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
 .example-title {
-    font-family: 'Courier New', Courier, monospace;
     font-size: 0.8rem;
-    color: #94a3b8;
-    font-weight: normal;
+    color: #64748b;
+    font-weight: 600;
 }
 
 .example-buttons {
@@ -240,16 +188,16 @@ header .subtitle {
     gap: 0.5rem;
 }
 
-/* Estilo base compartido por todos los botones de ejemplo */
+/* Estilo base de los botones de ejemplo */
 .example-btn {
-    background-color: #1e293b;
-    border: 1px solid #475569;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
     border-radius: 4px;
     padding: 0.35rem 0.7rem;
     font-size: 0.78rem;
     cursor: pointer;
     transition: all 0.2s ease;
-    font-weight: bold;
+    font-weight: 600;
 }
 
 /* Controles No Tóxicos (Verde) */
@@ -259,9 +207,8 @@ header .subtitle {
 }
 
 .example-buttons .example-btn:not(.toxic-example-btn):hover {
-    background-color: #064e3b;
-    color: #ecfdf5;
-    border-color: #34d399;
+    background-color: #ecfdf5;
+    border-color: #059669;
 }
 
 /* Muestras de ensayo Tóxicas (Naranja/Ámbar) */
@@ -271,8 +218,7 @@ header .subtitle {
 }
 
 .toxic-example-btn:hover {
-    background-color: #78350f;
-    color: #fef3c7;
+    background-color: #fffbeb;
     border-color: #d97706;
 }
 
@@ -371,21 +317,22 @@ header .subtitle {
     50% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 10px rgba(41, 128, 185, 0.4); }
 }
 
-/* --- NUEVA SECCIÓN DE RESULTADOS HORIZONTAL COMPACTA (Estilo Referencia Oscura) --- */
+/* --- INTERFAZ COMPACTA HORIZONTAL DE RESULTADOS (OPTIMIZADA PREMIUM) --- */
 .results {
     margin-top: 1rem;
 }
 
 .compact-result-card {
-    background-color: #1e1e1e; /* Gris premium ultra oscuro */
-    border: 1px solid #2d2d2d;
+    background-color: #1e293b; /* Fondo oscuro premium pizarra para contraste */
+    border: 1px solid #334155;
     border-radius: 12px;
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
     gap: 1.2rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
     text-align: left;
+    transition: all 0.3s ease;
 }
 
 @media (min-width: 550px) {
@@ -401,20 +348,21 @@ header .subtitle {
 .status-indicator {
     display: flex;
     flex-direction: row;
-    gap: 0.5rem;
-    background-color: #151515;
-    padding: 0.5rem 0.8rem;
-    border-radius: 20px;
+    gap: 0.6rem;
+    background-color: #0f172a; /* Cápsula contenedora interna más oscura */
+    padding: 0.6rem 0.9rem;
+    border-radius: 24px;
     align-items: center;
     justify-content: center;
     width: fit-content;
     margin: 0 auto;
+    border: 1px solid #1e293b;
 }
 
 @media (min-width: 550px) {
     .status-indicator {
         flex-direction: column;
-        padding: 0.8rem 0.5rem;
+        padding: 0.9rem 0.6rem;
         margin: 0;
     }
 }
@@ -423,21 +371,32 @@ header .subtitle {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background-color: #2a2a2a; /* Apagado por defecto */
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    background-color: #334155; /* Apagado / Neutro por defecto */
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Estados activos del semáforo controlados por JS */
+/* Estados dinámicos e iluminaciones del Semáforo según clases añadidas por JS */
 .compact-result-card.is-toxic .dot-toxic {
-    background-color: #ff4d4d;
-    box-shadow: 0 0 10px #ff4d4d;
-}
-.compact-result-card.is-nontoxic .dot-nontoxic {
-    background-color: #2ecc71;
-    box-shadow: 0 0 10px #2ecc71;
+    background-color: #ef4444; /* Rojo brillante moderno */
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.8);
 }
 
-/* Contenido Principal de Texto */
+.compact-result-card.is-toxic .dot-neutral,
+.compact-result-card.is-toxic .dot-nontoxic {
+    opacity: 0.25; /* Atenuación de los otros focos */
+}
+
+.compact-result-card.is-nontoxic .dot-nontoxic {
+    background-color: #10b981; /* Verde esmeralda moderno */
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.8);
+}
+
+.compact-result-card.is-nontoxic .dot-toxic,
+.compact-result-card.is-nontoxic .dot-neutral {
+    opacity: 0.25; /* Atenuación de los otros focos */
+}
+
+/* Contenido Principal de Texto de los Resultados */
 .result-main-content {
     display: flex;
     flex-direction: column;
@@ -446,15 +405,15 @@ header .subtitle {
 
 .result-main-content h2 {
     font-size: 1.25rem;
-    color: #ffffff;
+    color: #f8fafc; /* Texto claro premium */
     margin: 0;
 }
 
 #toxicity-verdict {
     font-weight: bold;
 }
-#toxicity-verdict.text-toxic { color: #ff4d4d; }
-#toxicity-verdict.text-nontoxic { color: #2ecc71; }
+#toxicity-verdict.text-toxic { color: #ef4444; }
+#toxicity-verdict.text-nontoxic { color: #10b981; }
 
 /* Barra de progreso lineal integrada */
 .compact-progress-wrapper {
@@ -462,50 +421,54 @@ header .subtitle {
     align-items: center;
     gap: 1rem;
     width: 100%;
+    margin: 0.2rem 0;
 }
 
 .compact-progress-bar-container {
     flex-grow: 1;
-    background-color: #2d2d2d;
-    height: 6px;
-    border-radius: 3px;
+    background-color: #0f172a;
+    height: 8px;
+    border-radius: 4px;
     overflow: hidden;
+    border: 1px solid #1e293b;
 }
 
 .compact-progress-bar {
     height: 100%;
     width: 0%;
-    background-color: #ff4d4d;
-    border-radius: 3px;
-    transition: width 0.5s ease-in-out;
+    background-color: #38bdf8; /* Color neutro inicial */
+    border-radius: 4px;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease;
 }
 
 .compact-percentage-text {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     font-weight: bold;
-    color: #ff4d4d;
-    min-width: 40px;
+    color: #94a3b8;
+    min-width: 45px;
     text-align: right;
+    font-family: monospace;
 }
 
 .quick-summary-text {
     font-size: 0.85rem;
-    color: #aaaaaa;
+    color: #94a3b8;
     margin: 0;
-    line-height: 1.4;
+    line-height: 1.45;
 }
 
 /* Mini Visor Derecho de Molécula */
 .compact-molecule-viewer {
-    background-color: #252525;
-    border: 1px solid #333333;
+    background-color: #0f172a;
+    border: 1px solid #334155;
     border-radius: 8px;
-    padding: 0.4rem;
+    padding: 0.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
     width: fit-content;
     margin: 0 auto;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
 }
 
 @media (min-width: 550px) {
@@ -514,7 +477,13 @@ header .subtitle {
     }
 }
 
-/* --- SECCIÓN SHAP REORGANIZADA MINIMALISTA --- */
+#molecule-canvas {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+/* --- SECCIÓN SHAP REORGANIZADA MINIMALISTA (INTEGRA, SIN TOCAR) --- */
 .compact-descriptor-section {
     margin-top: 1.8rem;
     text-align: left;
@@ -538,7 +507,7 @@ header .subtitle {
 
 @media (min-width: 600px) {
     .compact-shap-list {
-        grid-template-columns: 1fr 1fr; /* Dos columnas limpias */
+        grid-template-columns: 1fr 1fr; /* Dos columnas estructuradas */
     }
 }
 
@@ -553,7 +522,7 @@ header .subtitle {
     gap: 0.2rem;
 }
 
-/* Bordes acentuados según la dirección del impacto */
+/* Bordes acentuados según la dirección del impacto SHAP */
 .compact-shap-item.increase-border { border-left-color: #ff4d4d; }
 .compact-shap-item.decrease-border { border-left-color: #2ecc71; }
 

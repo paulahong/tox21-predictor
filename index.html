@@ -19,33 +19,26 @@
             </div>
         </header>
         
-        <div class="terminal-container">
-            <div class="terminal-top-bar">
-                <span class="terminal-dot dot-close"></span>
-                <span class="terminal-dot dot-minimize"></span>
-                <span class="terminal-dot dot-maximize"></span>
-                <span class="terminal-title">tox21_predictor_console.sh</span>
-            </div>
-            
-            <div class="terminal-body">
-                <div class="input-section">
-                    <label for="smiles-input">
-                        <span class="terminal-prompt">user@tox21:~$</span> ./analyze_structure --input=SMILES
-                    </label>
-                    
-                    <div class="input-row">
-                        <input type="text" id="smiles-input" placeholder="Introduce la cadena SMILES (Ej: Aspirina, Cafeína...)" />
-                        <button id="predict-btn" onclick="predictToxicity()">Predecir Toxicidad</button>
-                    </div>
-                    
-                    <div class="smiles-examples">
-                        <span class="example-title">> Ejemplos de compuestos no tóxicos:</span>
+        <div class="search-container">
+            <div class="input-section">
+                <label for="smiles-input" class="search-label">Introduce la estructura molecular (SMILES)</label>
+                
+                <div class="input-row">
+                    <input type="text" id="smiles-input" placeholder="Introduce la cadena SMILES (Ej: Aspirina, Cafeína...)" />
+                    <button id="predict-btn" onclick="predictToxicity()">Predecir Toxicidad</button>
+                </div>
+                
+                <div class="smiles-examples">
+                    <div class="example-group">
+                        <span class="example-title">Compuestos no tóxicos:</span>
                         <div class="example-buttons">
                             <button type="button" class="example-btn" onclick="loadExample('CC(=O)OC1=CC=CC=C1C(=O)O')">Aspirina</button>
                             <button type="button" class="example-btn" onclick="loadExample('CN1C=NC2=C1C(=O)N(C(=O)N2C)C')">Cafeína</button>
                         </div>
-                        
-                        <span class="example-title" style="margin-top: 10px; display: block;">> Ejemplos de compuestos tóxicos:</span>
+                    </div>
+                    
+                    <div class="example-group">
+                        <span class="example-title">Compuestos tóxicos:</span>
                         <div class="example-buttons">
                             <button type="button" class="example-btn toxic-example-btn" onclick="loadExample('CC12CCC3C(C1CCC2O)CCC4C3CCC(=O)C4')">Testosterona</button>
                             <button type="button" class="example-btn toxic-example-btn" onclick="loadExample('C1=CC(=CC=C1Cl)NN=C(C#N)C#N')">CCCP (Desacoplador)</button>
@@ -67,7 +60,7 @@
         </div>
         
         <div id="results" class="results hidden">
-            <div class="compact-result-card">
+            <div id="prediction-card" class="compact-result-card">
                 
                 <div id="status-traffic-light" class="status-indicator">
                     <span class="indicator-dot dot-toxic"></span>
@@ -88,7 +81,7 @@
                     </div>
                     
                     <p id="quick-summary" class="quick-summary-text">
-                        Analizando la disrupción en los complejos enzimáticos de la cadena respiratoria celular...
+                        Analizando alteración del potencial eléctrico de las membranas mitocondriales...
                     </p>
                 </div>
 
@@ -99,7 +92,7 @@
             
             <div id="descriptor-info" class="compact-descriptor-section">
                 <h3>Factores de Impacto Estructural (SHAP)</h3>
-                <p class="shap-intro">Contribución de los descriptores fisicoquímicos en la estimación del potencial de membrana:</p>
+                <p class="shap-intro">Estas son las características estructurales y fisicoquímicas que más han influido en esta predicción específica:</p>
                 <ul id="shap-list" class="compact-shap-list"></ul>
             </div>
         </div>
