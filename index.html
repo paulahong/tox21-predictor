@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Predictor de Toxicidad Tox21</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="static/style.css">
     
     <script src="https://unpkg.com/smiles-drawer@2.0.1/dist/smiles-drawer.min.js"></script>
 </head>
@@ -40,7 +40,6 @@
             <h2>Resultados de la Predicción</h2>
             
             <div class="results-main-layout">
-                
                 <div class="molecule-viewer">
                     <canvas id="molecule-canvas" width="220" height="220"></canvas>
                 </div>
@@ -52,20 +51,18 @@
                     </div>
                     <p id="probability-text" class="probability-text"></p>
                 </div>
-                
             </div>
             
             <div id="descriptor-info" class="descriptor-info">
                 <h3>Top 5 Descriptores Críticos (Impacto SHAP):</h3>
                 <p class="shap-intro">Estas son las características estructurales y fisicoquímicas que más han influido en esta predicción específica:</p>
-                <ul id="shap-list" class="shap-list">
-                </ul>
+                <ul id="shap-list" class="shap-list"></ul>
             </div>
         </div>
         
         <div id="error" class="error hidden"></div>
     </div>
     
-    <script src="app.js"></script>
+    <script src="static/app.js"></script>
 </body>
 </html>
