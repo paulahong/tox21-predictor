@@ -67,32 +67,47 @@
         </div>
         
         <div id="results" class="results hidden">
-            <h2>Resultados de la Predicción</h2>
-            
-            <div class="results-main-layout">
-                <div class="molecule-viewer">
-                    <canvas id="molecule-canvas" width="220" height="220"></canvas>
-                </div>
+            <div class="compact-result-card">
                 
-                <div id="prediction-result" class="prediction-box">
-                    <div id="toxicity-label" class="toxicity-label"></div>
-                    <div class="probability-bar-container">
-                        <div id="probability-bar" class="probability-bar"></div>
+                <div id="status-traffic-light" class="status-indicator">
+                    <span class="indicator-dot dot-toxic"></span>
+                    <span class="indicator-dot dot-neutral"></span>
+                    <span class="indicator-dot dot-nontoxic"></span>
+                </div>
+
+                <div class="result-main-content">
+                    <div class="result-header-row">
+                        <h2>Resultado: <span id="toxicity-verdict">Calculando...</span></h2>
                     </div>
-                    <p id="probability-text" class="probability-text"></p>
+                    
+                    <div class="compact-progress-wrapper">
+                        <div class="compact-progress-bar-container">
+                            <div id="probability-bar" class="compact-progress-bar"></div>
+                        </div>
+                        <span id="probability-text" class="compact-percentage-text">0%</span>
+                    </div>
+                    
+                    <p id="quick-summary" class="quick-summary-text">
+                        Analizando la disrupción en los complejos enzimáticos de la cadena respiratoria celular...
+                    </p>
+                </div>
+
+                <div class="compact-molecule-viewer">
+                    <canvas id="molecule-canvas" width="140" height="140"></canvas>
                 </div>
             </div>
             
-            <div id="descriptor-info" class="descriptor-info">
-                <h3>Top 5 Descriptores Críticos (Impacto SHAP):</h3>
-                <p class="shap-intro">Estas son las características estructurales y fisicoquímicas que más han influido en esta predicción específica:</p>
-                <ul id="shap-list" class="shap-list"></ul>
+            <div id="descriptor-info" class="compact-descriptor-section">
+                <h3>Factores de Impacto Estructural (SHAP)</h3>
+                <p class="shap-intro">Contribución de los descriptores fisicoquímicos en la estimación del potencial de membrana:</p>
+                <ul id="shap-list" class="compact-shap-list"></ul>
             </div>
         </div>
         
         <div id="error" class="error hidden"></div>
 
         <hr class="section-divider" />
+        
         <div id="history-section" class="history-section">
             <div class="history-header">
                 <h3>Consultas Recientes</h3>
