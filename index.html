@@ -12,40 +12,41 @@
     <div class="container">
         <header>
             <h1>Predictor de Toxicidad Tox21</h1>
-            
-            <div class="terminal-header">
-                <div class="terminal-top-bar">
-                    <span class="terminal-dot dot-close"></span>
-                    <span class="terminal-dot dot-minimize"></span>
-                    <span class="terminal-dot dot-maximize"></span>
-                    <span class="terminal-title">tox21_core_model.sh</span>
-                </div>
-                <div class="terminal-body">
-                    <p class="subtitle">
-                        <span class="terminal-prompt">user@tox21:~$</span> ./run_prediction --target=SR-MMP --mode=machine_learning
-                        <br />
-                        <span class="terminal-output">Predicción de estrés celular y alteración del potencial de membrana mitocondrial mediante aprendizaje automático</span><span class="terminal-cursor">_</span>
-                    </p>
-                </div>
-            </div>
+            <p class="subtitle">Predicción de estrés celular y alteración del potencial de membrana mitocondrial (SR-MMP) mediante aprendizaje automático</p>
         </header>
         
-        <div class="input-section">
-            <label for="smiles-input">Introduce la cadena SMILES:</label>
-            <input type="text" id="smiles-input" placeholder="Ej: CC(=O)OC1=CC=CC=C1C(=O)O (Aspirina)" />
-            <button id="predict-btn" onclick="predictToxicity()">Predecir Toxicidad</button>
+        <div class="terminal-container">
+            <div class="terminal-top-bar">
+                <span class="terminal-dot dot-close"></span>
+                <span class="terminal-dot dot-minimize"></span>
+                <span class="terminal-dot dot-maximize"></span>
+                <span class="terminal-title">tox21_predictor_console.sh</span>
+            </div>
             
-            <div class="smiles-examples">
-                <span class="example-title">Ejemplos de compuestos no tóxicos:</span>
-                <div class="example-buttons">
-                    <button type="button" class="example-btn" onclick="loadExample('CC(=O)OC1=CC=CC=C1C(=O)O')">Aspirina</button>
-                    <button type="button" class="example-btn" onclick="loadExample('CN1C=NC2=C1C(=O)N(C(=O)N2C)C')">Cafeína</button>
-                </div>
-                
-                <span class="example-title" style="margin-top: 12px; display: block;">Ejemplos de compuestos tóxicos:</span>
-                <div class="example-buttons">
-                    <button type="button" class="example-btn toxic-example-btn" onclick="loadExample('CC12CCC3C(C1CCC2O)CCC4C3CCC(=O)C4')">Testosterona</button>
-                    <button type="button" class="example-btn toxic-example-btn" onclick="loadExample('C1=CC(=CC=C1Cl)NN=C(C#N)C#N')">CCCP (Desacoplador)</button>
+            <div class="terminal-body">
+                <div class="input-section">
+                    <label for="smiles-input">
+                        <span class="terminal-prompt">user@tox21:~$</span> ./analyze_structure --input=SMILES
+                    </label>
+                    
+                    <div class="input-row">
+                        <input type="text" id="smiles-input" placeholder="Introduce la cadena SMILES (Ej: Aspirina, Cafeína...)" />
+                        <button id="predict-btn" onclick="predictToxicity()">Predecir Toxicidad</button>
+                    </div>
+                    
+                    <div class="smiles-examples">
+                        <span class="example-title">> Controles Disponibles (No Tóxicos):</span>
+                        <div class="example-buttons">
+                            <button type="button" class="example-btn" onclick="loadExample('CC(=O)OC1=CC=CC=C1C(=O)O')">Aspirina</button>
+                            <button type="button" class="example-btn" onclick="loadExample('CN1C=NC2=C1C(=O)N(C(=O)N2C)C')">Cafeína</button>
+                        </div>
+                        
+                        <span class="example-title" style="margin-top: 10px; display: block;">> Muestras de Ensayo (Tóxicos en SR-MMP):</span>
+                        <div class="example-buttons">
+                            <button type="button" class="example-btn toxic-example-btn" onclick="loadExample('CC12CCC3C(C1CCC2O)CCC4C3CCC(=O)C4')">Testosterona</button>
+                            <button type="button" class="example-btn toxic-example-btn" onclick="loadExample('C1=CC(=CC=C1Cl)NN=C(C#N)C#N')">CCCP (Desacoplador)</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

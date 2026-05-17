@@ -32,13 +32,20 @@ body {
 /* Header */
 header h1 {
     font-size: 1.8rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.3rem;
     text-align: center;
     color: #2c3e50;
 }
 
-/* --- NUEVOS ESTILOS: MAQUETACIÓN DE TERMINAL INTEGRADA (OPCIÓN 6) --- */
-.terminal-header {
+header .subtitle {
+    font-size: 0.95rem;
+    text-align: center;
+    color: #7f8c8d;
+    margin-bottom: 1.5rem;
+}
+
+/* --- NUEVOS ESTILOS: CAJA DE LA TERMINAL PARA EL INPUT --- */
+.terminal-container {
     background-color: #1e293b; /* Gris oscuro pizarra tipo consola */
     border-radius: 8px;
     overflow: hidden;
@@ -79,31 +86,18 @@ header h1 {
 }
 
 .terminal-body {
-    padding: 1rem;
+    padding: 1.2rem;
 }
 
-header .terminal-body .subtitle {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 0.85rem;
-    text-align: left; /* Alineación a la izquierda propia de consolas */
-    color: #38bdf8; /* Azul cyan tecnológico para comandos */
-    margin-bottom: 0;
-    line-height: 1.4;
-}
-
+/* Ajustes de tipografía de consola dentro de la terminal */
 .terminal-prompt {
-    color: #4ade80; /* Verde brillante clásico para el usuario de prompt */
+    color: #4ade80; /* Verde brillante clásico de Linux */
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
 }
 
-.terminal-output {
-    color: #e2e8f0; /* Blanco hueso para la descripción o salida de consola */
-    display: inline-block;
-    margin-top: 0.4rem;
-}
-
-/* Animación del cursor parpadeante */
 .terminal-cursor {
-    color: #a7f3d0;
+    color: #38bdf8;
     font-weight: bold;
     animation: blinkCursor 1s infinite;
 }
@@ -112,60 +106,64 @@ header .terminal-body .subtitle {
     0%, 100% { opacity: 0; }
     50% { opacity: 1; }
 }
-/* --- FIN DE ESTILOS DE TERMINAL --- */
 
-
-/* Input Section */
+/* Input Section Inside Terminal */
 .input-section {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
+    gap: 0.6rem;
 }
 
 .input-section label {
-    font-weight: bold;
-    font-size: 0.95rem;
-    color: #34495e;
+    font-weight: normal;
+    font-size: 0.9rem;
+    color: #e2e8f0; /* Texto claro para contrastar sobre el fondo oscuro */
+    font-family: 'Courier New', Courier, monospace;
 }
 
-/* Contenedor interno para alinear input y botón horizontalmente */
+/* Fila contenedora para alinear el input y el botón en paralelo */
+.input-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
 @media (min-width: 480px) {
-    .input-section {
+    .input-row {
         display: grid;
         grid-template-columns: 1fr auto;
-        align-items: end;
         gap: 0.75rem;
-    }
-    
-    .input-section label {
-        grid-column: 1 / -1; /* El label ocupa toda la fila superior */
     }
 }
 
 #smiles-input {
     padding: 0.8rem 1rem;
-    border: 1px solid #dcdde1;
+    border: 1px solid #475569;
     border-radius: 6px;
     font-size: 0.95rem;
     width: 100%;
-    background-color: #f8f9fa;
-    color: #2c3e50;
+    background-color: #0f172a; /* Input oscuro integrado */
+    color: #38bdf8; /* Texto cyan tecnológico al escribir */
+    font-family: 'Courier New', Courier, monospace;
     transition: all 0.25s ease-in-out;
 }
 
-/* Efecto de enfoque moderno al estilo asistentes de IA */
+#smiles-input::placeholder {
+    color: #64748b;
+}
+
+/* Enfoque optimizado para modo consola */
 #smiles-input:focus {
-    background-color: #ffffff;
-    border-color: #2980b9;
+    background-color: #0f172a;
+    border-color: #38bdf8;
     outline: none;
-    box-shadow: 0 0 10px rgba(41, 128, 185, 0.15);
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
 }
 
 #predict-btn {
     padding: 0.8rem 1.5rem;
-    background-color: #2980b9;
-    color: #fff;
+    background-color: #38bdf8; /* Azul cyan a juego con la terminal */
+    color: #0f172a;
     border: none;
     border-radius: 6px;
     font-size: 0.95rem;
@@ -176,27 +174,29 @@ header .terminal-body .subtitle {
 }
 
 #predict-btn:hover {
-    background-color: #1c5980;
-    box-shadow: 0 2px 6px rgba(28, 89, 128, 0.3);
+    background-color: #0ea5e9;
+    box-shadow: 0 2px 8px rgba(56, 189, 248, 0.4);
 }
 
 #predict-btn:active {
-    transform: scale(0.98); /* Sutil efecto de pulsación física */
+    transform: scale(0.98);
 }
 
-/* --- BOTONES DE EJEMPLO DE SMILES --- */
+/* --- BOTONES DE EJEMPLO ADAPTADOS A LA TERMINAL --- */
 .smiles-examples {
-    grid-column: 1 / -1; /* Ocupa todo el ancho disponible */
-    margin-top: 0.5rem;
+    margin-top: 0.8rem;
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 0.5rem;
+    border-top: 1px solid #334155;
+    padding-top: 0.8rem;
 }
 
 .example-title {
+    font-family: 'Courier New', Courier, monospace;
     font-size: 0.8rem;
-    color: #7f8c8d;
-    font-weight: bold;
+    color: #94a3b8;
+    font-weight: normal;
 }
 
 .example-buttons {
@@ -206,11 +206,11 @@ header .terminal-body .subtitle {
 }
 
 .example-btn {
-    background-color: #f1f2f6;
-    color: #57606f;
-    border: 1px solid #ced6e0;
+    background-color: #334155;
+    color: #f1f5f9;
+    border: 1px solid #475569;
     border-radius: 4px;
-    padding: 0.3rem 0.6rem;
+    padding: 0.35rem 0.7rem;
     font-size: 0.78rem;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -218,19 +218,20 @@ header .terminal-body .subtitle {
 }
 
 .example-btn:hover {
-    background-color: #e4e7eb;
-    color: #2f3542;
-    border-color: #a4b0be;
+    background-color: #475569;
+    color: #ffffff;
+    border-color: #64748b;
 }
 
-/* Variante opcional para diferenciar los botones de control positivo */
+/* Variación para ejemplos tóxicos en la terminal */
 .toxic-example-btn {
     border-color: #f59e0b;
+    color: #f59e0b;
 }
 
 .toxic-example-btn:hover {
-    background-color: #fef3c7;
-    color: #d97706;
+    background-color: #78350f;
+    color: #fef3c7;
     border-color: #d97706;
 }
 
@@ -238,7 +239,7 @@ header .terminal-body .subtitle {
     transform: scale(0.97);
 }
 
-/* --- ANIMACIÓN MOLECULAR DE CARGA (OPCIÓN 3 CORREGIDA) --- */
+/* --- ANIMACIÓN MOLECULAR DE CARGA --- */
 .loading {
     display: flex;
     flex-direction: column;
@@ -258,7 +259,7 @@ header .terminal-body .subtitle {
 .atom {
     position: absolute;
     border-radius: 50%;
-    background-color: #2980b9; /* Sincronizado con el azul de la web */
+    background-color: #2980b9;
     animation: pulseAtom 1.5s infinite ease-in-out;
 }
 
@@ -268,7 +269,7 @@ header .terminal-body .subtitle {
     height: 20px;
     top: 30px;
     left: 30px;
-    background-color: #27ae60; /* Verde esmeralda */
+    background-color: #27ae60;
 }
 
 /* Átomos Satélites */
@@ -286,10 +287,10 @@ header .terminal-body .subtitle {
     bottom: 5px;
     left: 10px;
     animation-delay: 0.6s;
-    background-color: #8e44ad; /* Tono morado para el tercer elemento */
+    background-color: #8e44ad;
 }
 
-/* Enlaces Químicos (Líneas conectoras moleculares) */
+/* Enlaces Químicos */
 .bond {
     position: absolute;
     background-color: #ced6e0;
@@ -312,7 +313,6 @@ header .terminal-body .subtitle {
     transform: rotate(135deg);
 }
 
-/* Texto debajo del clúster molecular */
 .loading-text {
     font-size: 0.95rem;
     color: #4b5563;
@@ -320,7 +320,6 @@ header .terminal-body .subtitle {
     font-weight: 500;
 }
 
-/* Keyframes para los motores de animación */
 @keyframes rotateMolecule {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -342,7 +341,7 @@ header .terminal-body .subtitle {
     color: #2c3e50;
 }
 
-/* --- DISEÑO EN PARALELO (LADO A LADO) --- */
+/* DISEÑO EN PARALELO */
 .results-main-layout {
     display: flex;
     flex-direction: column;
@@ -350,17 +349,16 @@ header .terminal-body .subtitle {
     margin-bottom: 1.5rem;
 }
 
-/* En pantallas de tablets o PC, se alinean uno al lado del otro */
 @media (min-width: 580px) {
     .results-main-layout {
         display: grid;
-        grid-template-columns: auto 1fr; /* Columna fija para molécula, flexible para el veredicto */
-        align-items: center; /* Centrado vertical de ambos bloques */
+        grid-template-columns: auto 1fr;
+        align-items: center;
         gap: 1.5rem;
     }
 }
 
-/* --- VISOR DE LA MOLÉCULA --- */
+/* VISOR DE LA MOLÉCULA */
 .molecule-viewer {
     background-color: #ffffff;
     border: 1px solid #e1e8ed;
@@ -380,7 +378,7 @@ header .terminal-body .subtitle {
     height: auto;
 }
 
-/* --- CAJA DE PREDICCIÓN --- */
+/* CAJA DE PREDICCIÓN */
 .prediction-box {
     border: 2px solid #bdc3c7;
     border-radius: 6px;
@@ -390,12 +388,11 @@ header .terminal-body .subtitle {
     flex-direction: column;
     gap: 0.6rem;
     justify-content: center;
-    height: 100%; /* Permite estirarse de forma responsiva */
-    min-height: 238px; /* Altura mínima óptima para alinearse con el visor de 220px */
+    height: 100%;
+    min-height: 238px;
     transition: all 0.3s ease-in-out;
 }
 
-/* --- CLASES DINÁMICAS --- */
 .prediction-box.toxic-border {
     border: 2px solid #e74c3c;
     background-color: #fdf2f0;
@@ -443,7 +440,7 @@ header .terminal-body .subtitle {
     font-weight: bold;
 }
 
-/* --- SECCIÓN DETALLES EXPLICATIVOS SHAP --- */
+/* SECCIÓN DETALLES EXPLICATIVOS SHAP */
 .descriptor-info {
     margin-top: 1.8rem;
     text-align: left;
@@ -461,7 +458,6 @@ header .terminal-body .subtitle {
     margin-bottom: 1rem;
 }
 
-/* Lista de descriptores */
 .shap-list {
     list-style-type: none;
     display: flex;
@@ -469,7 +465,6 @@ header .terminal-body .subtitle {
     gap: 0.8rem;
 }
 
-/* Tarjeta contenedora de cada descriptor */
 .shap-item {
     background: #fafbfc;
     border: 1px solid #e1e8ed;
@@ -477,7 +472,6 @@ header .terminal-body .subtitle {
     padding: 0.8rem 1rem;
 }
 
-/* Fila superior dentro de la tarjeta (Nombre + Insignia) */
 .shap-header {
     display: flex;
     justify-content: space-between;
@@ -491,7 +485,6 @@ header .terminal-body .subtitle {
     color: #34495e;
 }
 
-/* Estilo base para las insignias */
 .shap-badge {
     font-size: 0.75rem;
     font-weight: bold;
@@ -500,19 +493,16 @@ header .terminal-body .subtitle {
     white-space: nowrap;
 }
 
-/* Insignia: Aumenta toxicidad (Rojo suave) */
 .shap-badge.shap-increase {
     background-color: #fadbd8;
     color: #c0392b;
 }
 
-/* Insignia: Disminuye toxicidad (Verde suave) */
 .shap-badge.shap-decrease {
     background-color: #d4efdf;
     color: #196f3d;
 }
 
-/* Texto explicativo inferior */
 .shap-desc {
     font-size: 0.8rem;
     color: #7f8c8d;
@@ -532,7 +522,7 @@ header .terminal-body .subtitle {
     display: none;
 }
 
-/* --- NUEVOS ESTILOS DEL HISTORIAL INTERACTIVO --- */
+/* HISTORIAL INTERACTIVO */
 .section-divider {
     border: 0;
     height: 1px;
@@ -581,7 +571,6 @@ header .terminal-body .subtitle {
     padding-right: 5px;
 }
 
-/* Tarjeta individual del historial clickeable */
 .history-item {
     display: flex;
     justify-content: space-between;
@@ -611,7 +600,6 @@ header .terminal-body .subtitle {
     flex-grow: 1;
 }
 
-/* Micro-etiquetas dentro del historial */
 .history-status-badge {
     font-size: 0.7rem;
     font-weight: bold;
