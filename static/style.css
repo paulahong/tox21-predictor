@@ -536,8 +536,7 @@ header .subtitle {
 /* Contenedor inyectado dinámicamente por la estructura de JS */
 .shap-item {
     background-color: #fafbfc;
-    border: 1px solid #e1e8ed;
-    border-left: 4px solid #bdc3c7; /* Color neutral de respaldo */
+    border: 1px solid #e1e8ed; /* Mantiene el borde completo uniforme, sin línea gruesa a la izquierda */
     padding: 0.6rem 0.8rem;
     border-radius: 4px;
     display: flex;
@@ -576,10 +575,6 @@ header .subtitle {
     color: #196f3d; 
     background-color: #e8f8f5;
 }
-
-/* Sincronización de bordes laterales con los badges dinámicos */
-.shap-item:has(.shap-increase) { border-left-color: #ef4444; }
-.shap-item:has(.shap-decrease) { border-left-color: #10b981; }
 
 .shap-desc {
     font-size: 0.8rem;
