@@ -32,17 +32,88 @@ body {
 /* Header */
 header h1 {
     font-size: 1.8rem;
-    margin-bottom: 0.3rem;
+    margin-bottom: 1rem;
     text-align: center;
     color: #2c3e50;
 }
 
-header .subtitle {
-    font-size: 0.95rem;
-    text-align: center;
-    color: #7f8c8d;
-    margin-bottom: 1.5rem;
+/* --- NUEVOS ESTILOS: MAQUETACIÓN DE TERMINAL INTEGRADA (OPCIÓN 6) --- */
+.terminal-header {
+    background-color: #1e293b; /* Gris oscuro pizarra tipo consola */
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    margin-bottom: 1.8rem;
+    border: 1px solid #334155;
 }
+
+.terminal-top-bar {
+    background-color: #0f172a; /* Franja superior más oscura */
+    padding: 0.5rem 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    position: relative;
+}
+
+/* Botones simulados del sistema de ventanas */
+.terminal-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.dot-close { background-color: #ef4444; }
+.dot-minimize { background-color: #f59e0b; }
+.dot-maximize { background-color: #10b981; }
+
+.terminal-title {
+    color: #94a3b8;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.75rem;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-weight: bold;
+}
+
+.terminal-body {
+    padding: 1rem;
+}
+
+header .terminal-body .subtitle {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.85rem;
+    text-align: left; /* Alineación a la izquierda propia de consolas */
+    color: #38bdf8; /* Azul cyan tecnológico para comandos */
+    margin-bottom: 0;
+    line-height: 1.4;
+}
+
+.terminal-prompt {
+    color: #4ade80; /* Verde brillante clásico para el usuario de prompt */
+}
+
+.terminal-output {
+    color: #e2e8f0; /* Blanco hueso para la descripción o salida de consola */
+    display: inline-block;
+    margin-top: 0.4rem;
+}
+
+/* Animación del cursor parpadeante */
+.terminal-cursor {
+    color: #a7f3d0;
+    font-weight: bold;
+    animation: blinkCursor 1s infinite;
+}
+
+@keyframes blinkCursor {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+}
+/* --- FIN DE ESTILOS DE TERMINAL --- */
+
 
 /* Input Section */
 .input-section {
