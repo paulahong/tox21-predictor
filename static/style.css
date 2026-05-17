@@ -493,18 +493,31 @@ header .subtitle {
     height: auto;
 }
 
-/* --- SECCIÓN SHAP REORGANIZADA MINIMALISTA --- */
+/* --- SECCIÓN SHAP PREMIUM REDISEÑADA --- */
 .compact-descriptor-section {
-    margin-top: 1.8rem;
+    margin-top: 2rem;
     text-align: left;
+    background: #1e293b; /* Fondo oscuro premium pizarra unificado */
+    border: 1px solid #334155;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
 }
 
 .compact-descriptor-section h3 {
-    font-size: 1rem;
-    color: #2c3e50;
-    margin-bottom: 0.6rem;
+    font-size: 1.1rem;
+    color: #f8fafc; /* Texto claro premium */
+    margin-bottom: 0.4rem;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.75px;
+    font-weight: 700;
+}
+
+.shap-intro {
+    font-size: 0.88rem;
+    color: #94a3b8; /* Gris azulado suave ultra-legible */
+    margin-bottom: 1.2rem;
+    line-height: 1.5;
 }
 
 .compact-shap-list {
@@ -512,7 +525,7 @@ header .subtitle {
     padding: 0;
     display: grid;
     grid-template-columns: 1fr;
-    gap: 0.6rem;
+    gap: 0.75rem;
 }
 
 @media (min-width: 600px) {
@@ -523,16 +536,25 @@ header .subtitle {
 
 /* Contenedor inyectado dinámicamente por la estructura de JS */
 .shap-item {
-    background-color: #fafbfc;
-    border: 1px solid #e1e8ed;
-    border-left: 4px solid #bdc3c7; /* Color neutral de respaldo */
-    padding: 0.6rem 0.8rem;
-    border-radius: 4px;
+    background-color: #0f172a; /* Fondo interno más profundo */
+    border: 1px solid #1e293b;
+    border-left: 4px solid #64748b; /* Color neutral por defecto */
+    padding: 0.8rem 1rem;
+    border-radius: 6px;
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: 0.4rem;
     height: 100%;
+    transition: transform 0.2s ease, border-color 0.2s ease;
 }
+
+.shap-item:hover {
+    transform: translateY(-2px); /* Efecto interactivo premium al pasar el ratón */
+}
+
+/* Sincronización de bordes laterales con las clases dinámicas */
+.shap-item:has(.shap-increase) { border-left-color: #ef4444; }
+.shap-item:has(.shap-decrease) { border-left-color: #10b981; }
 
 .shap-header {
     display: flex;
@@ -543,36 +565,36 @@ header .subtitle {
 }
 
 .shap-name { 
-    color: #2c3e50; 
+    color: #e2e8f0; /* Texto claro de alta fidelidad */
+    font-size: 0.9rem;
     font-weight: bold; 
 }
 
-/* Badges dinámicos de SHAP (+ / -) */
+/* Badges dinámicos de SHAP (+ / -) con efecto neón translúcido */
 .shap-badge {
-    font-family: monospace; 
+    font-family: 'Courier New', Courier, monospace; 
     font-size: 0.75rem; 
     font-weight: bold;
-    padding: 0.15rem 0.4rem;
+    padding: 0.2rem 0.5rem;
     border-radius: 4px;
+    white-space: nowrap;
 }
 
 .shap-badge.shap-increase { 
-    color: #c0392b; 
-    background-color: #fdedec;
+    color: #ef4444; 
+    background-color: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.25);
 }
 .shap-badge.shap-decrease { 
-    color: #196f3d; 
-    background-color: #e8f8f5;
+    color: #10b981; 
+    background-color: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
-/* Sincronización de bordes laterales con los badges dinámicos */
-.shap-item:has(.shap-increase) { border-left-color: #ef4444; }
-.shap-item:has(.shap-decrease) { border-left-color: #10b981; }
-
 .shap-desc {
-    font-size: 0.8rem;
-    color: #7f8c8d;
-    line-height: 1.35;
+    font-size: 0.82rem;
+    color: #94a3b8; /* Texto descriptivo fino y limpio */
+    line-height: 1.4;
 }
 
 /* Error Message */
