@@ -205,25 +205,31 @@ header .subtitle {
     gap: 0.5rem;
 }
 
+/* Estilo base compartido por todos los botones de ejemplo */
 .example-btn {
-    background-color: #334155;
-    color: #f1f5f9;
+    background-color: #1e293b;
     border: 1px solid #475569;
     border-radius: 4px;
     padding: 0.35rem 0.7rem;
     font-size: 0.78rem;
     cursor: pointer;
     transition: all 0.2s ease;
-    font-weight: 500;
+    font-weight: bold;
 }
 
-.example-btn:hover {
-    background-color: #475569;
-    color: #ffffff;
-    border-color: #64748b;
+/* CORRECCIÓN: Estilo específico para controles No Tóxicos (Verde) */
+.example-buttons .example-btn:not(.toxic-example-btn) {
+    border-color: #10b981;
+    color: #10b981;
 }
 
-/* Variación para ejemplos tóxicos en la terminal */
+.example-buttons .example-btn:not(.toxic-example-btn):hover {
+    background-color: #064e3b;
+    color: #ecfdf5;
+    border-color: #34d399;
+}
+
+/* CORRECCIÓN: Estilo específico para muestras de ensayo Tóxicas (Naranja/Ámbar) */
 .toxic-example-btn {
     border-color: #f59e0b;
     color: #f59e0b;

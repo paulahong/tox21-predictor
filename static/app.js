@@ -118,6 +118,9 @@ function displayResult(toxicity, probability, topFeatures, smiles) {
                 const impactClass = isPositive ? 'shap-increase' : 'shap-decrease';
                 const sign = isPositive ? '+' : '';
 
+                // MODIFICACIÓN CRÍTICA: Llamamos al glosario externo pasándole el nombre del descriptor
+                const descripcionTraducida = obtenerDescripcionDescriptor(feat.descriptor);
+
                 li.innerHTML = `
                     <div class="shap-item">
                         <div class="shap-header">
@@ -126,7 +129,7 @@ function displayResult(toxicity, probability, topFeatures, smiles) {
                                 ${feat.impact} (${sign}${feat.shap_value.toFixed(4)})
                             </span>
                         </div>
-                        <p class="shap-desc">${feat.explanation}</p>
+                        <p class="shap-desc">${descripcionTraducida}</p>
                     </div>
                 `;
                 shapList.appendChild(li);
@@ -177,7 +180,7 @@ async function predictToxicity() {
         hideLoading();
         displayResult(toxicity, probability, topFeatures, smiles);
         
-        // CORRECCIÓN: Guardar la consulta exitosa automáticamente en el historial local
+        // Guardar la consulta exitosa automáticamente en el historial local
         saveToHistory(smiles, toxicity);
 
     } catch (err) {
@@ -196,7 +199,7 @@ function loadExample(smiles) {
     toggleVisibility('error', false);
 }
 
-// --- NUEVAS FUNCIONES DE GESTIÓN PARA EL HISTORIAL (localStorage) ---
+// --- GESTIÓN PARA EL HISTORIAL (localStorage) ---
 
 // Guarda la consulta en la caché del navegador evitando repeticiones
 function saveToHistory(smiles, toxicity) {
