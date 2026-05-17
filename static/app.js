@@ -1,4 +1,4 @@
-// app.js – Handles UI interactions and API communication
+// app.js – Handles UI interactions, API communication and Local History
 
 // URL directa de tu Space de Hugging Face
 const HUGGING_FACE_API_URL = "https://paulahong-tox21-predictor-api.hf.space/api";
@@ -139,7 +139,7 @@ function displayResult(toxicity, probability, topFeatures, smiles) {
     toggleVisibility('results', true);
 }
 
-// Main prediction function - CONECTADA CON HUGGING FACE
+// Main prediction function - CONECTADA CON HUGGING FACE Y HISTORIAL
 async function predictToxicity() {
     const smilesInput = document.getElementById('smiles-input');
     if (!smilesInput) return;
@@ -176,6 +176,9 @@ async function predictToxicity() {
         // Ocultamos la animación justo antes de pintar los resultados renderizados
         hideLoading();
         displayResult(toxicity, probability, topFeatures, smiles);
+        
+        // CORRECCIÓN: Guardar la consulta exitosa automáticamente en el historial local
+        saveToHistory(smiles, toxicity);
 
     } catch (err) {
         console.error('Prediction error:', err);
@@ -192,3 +195,68 @@ function loadExample(smiles) {
     toggleVisibility('results', false);
     toggleVisibility('error', false);
 }
+
+// --- NUEVAS FUNCIONES DE GESTIÓN PARA EL HISTORIAL (localStorage) ---
+
+// Guarda la consulta en la caché del navegador evitando repeticiones
+function saveToHistory(smiles, toxicity) {
+    let history = JSON.parse(localStorage.getItem('tox21_history')) || [];
+    
+    // Evita duplicados idénticos en la lista filtrando el smiles actual si ya existía
+    history = history.filter(item => item.smiles !== smiles);
+    
+    // Inserta el nuevo elemento al principio de la lista
+    history.unshift({ smiles: smiles, toxicity: toxicity });
+    
+    // Mantiene un límite razonable (15 elementos) para no desbordar visualmente la tarjeta
+    if (history.length > 15) {
+        history.pop();
+    }
+    
+    localStorage.setItem('tox21_history', JSON.stringify(history));
+    renderHistory();
+}
+
+// Pinta dinámicamente los elementos en el contenedor del HTML
+function renderHistory() {
+    const historyList = document.getElementById('history-list');
+    if (!historyList) return;
+    
+    const history = JSON.parse(localStorage.getItem('tox21_history')) || [];
+    historyList.innerHTML = '';
+    
+    if (history.length === 0) {
+        historyList.innerHTML = '<li style="font-size: 0.85rem; color: #94a3b8; font-style: italic;">No hay consultas recientes.</li>';
+        return;
+    }
+    
+    history.forEach(item => {
+        const li = document.createElement('li');
+        const isToxic = item.toxicity.includes('Tóxico') && !item.toxicity.startsWith('No');
+        const badgeClass = isToxic ? 'toxic-bg' : 'nontoxic-bg';
+        const labelText = isToxic ? 'Tóxico' : 'No Tóxico';
+        
+        li.innerHTML = `
+            <div class="history-item" onclick="loadHistoryItem('${item.smiles}')">
+                <span class="history-smiles" title="${item.smiles}">${item.smiles}</span>
+                <span class="history-status-badge ${badgeClass}">${labelText}</span>
+            </div>
+        `;
+        historyList.appendChild(li);
+    });
+}
+
+// Carga un compuesto guardado del historial y dispara inmediatamente su predicción
+function loadHistoryItem(smiles) {
+    loadExample(smiles);
+    predictToxicity();
+}
+
+// Elimina permanentemente el historial de consultas del explorador
+function clearHistory() {
+    localStorage.removeItem('tox21_history');
+    renderHistory();
+}
+
+// Renderiza el historial automáticamente al inicializar la aplicación web
+window.addEventListener('DOMContentLoaded', renderHistory);

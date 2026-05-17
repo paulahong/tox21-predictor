@@ -7,7 +7,7 @@
 }
 
 body {
-    /* CORREGIDO: Fondo negro/oscuro tecnológico para hacer resaltar el contenedor blanco */
+    /* Fondo oscuro tecnológico para hacer resaltar el contenedor blanco */
     background-color: #121824; 
     color: #333;
     line-height: 1.6;
@@ -459,4 +459,101 @@ header .subtitle {
 /* Utility Classes */
 .hidden {
     display: none;
+}
+
+/* --- NUEVOS ESTILOS DEL HISTORIAL INTERACTIVO --- */
+.section-divider {
+    border: 0;
+    height: 1px;
+    background: #e1e8ed;
+    margin: 2rem 0 1.5rem 0;
+}
+
+.history-section {
+    text-align: left;
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.history-header h3 {
+    font-size: 1.1rem;
+    color: #2c3e50;
+}
+
+.clear-history-btn {
+    background: none;
+    border: none;
+    color: #7f8c8d;
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-decoration: underline;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.clear-history-btn:hover {
+    color: #c0392b;
+}
+
+.history-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 180px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+/* Tarjeta individual del historial clickeable */
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0.8rem;
+    background-color: #f8f9fa;
+    border: 1px solid #e1e8ed;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    gap: 1rem;
+}
+
+.history-item:hover {
+    background-color: #f1f2f6;
+    border-color: #cbd5e1;
+    transform: translateX(2px);
+}
+
+.history-smiles {
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: #4b5563;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1;
+}
+
+/* Micro-etiquetas dentro del historial */
+.history-status-badge {
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    color: #fff;
+    white-space: nowrap;
+}
+
+.history-status-badge.toxic-bg {
+    background-color: #e74c3c;
+}
+
+.history-status-badge.nontoxic-bg {
+    background-color: #27ae60;
 }
