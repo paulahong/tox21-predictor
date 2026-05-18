@@ -1,6 +1,14 @@
 # TOX-21: Predictor de Toxicidad Mitocondrial
 
+[![DOI](https://zenodo.org/badge/1231808140.svg)](https://doi.org/10.5281/zenodo.20271209)
+
 Este proyecto es una aplicación web desarrollada como parte de la asignatura de Bioinformática y Medicina de la Universidad da Coruña. Permite predecir la toxicidad mitocondrial de compuestos químicos mediante aprendizaje automático, analizando alteraciones en el potencial de membrana mitocondrial a partir de estructuras moleculares en formato SMILES.
+
+## Acceso a la Aplicación
+
+Puedes probar la aplicación en vivo a través del siguiente enlace: **[Despliegue en Vercel](https://tox21-predictor-two.vercel.app/)**
+
+---
 
 ## Características Principales
 
@@ -23,7 +31,7 @@ Este proyecto es una aplicación web desarrollada como parte de la asignatura de
 
 ## Instalación y Uso
 
-1. Abra el archivo `index.html` en su navegador web.
+1. Accede a [https://tox21-predictor-two.vercel.app/](https://tox21-predictor-two.vercel.app/)
 2. Ingrese la estructura molecular en formato SMILES en el campo de entrada.
 3. Haga clic en "Predecir Toxicidad".
 4. Observe el resultado con el sistema de semáforo y la explicación de factores SHAP.
@@ -49,6 +57,10 @@ tox21-predictor/
 └── train_oversampling.py # Entrenamiento seleccionado para servicio externo
 
 ```
+
+## Material Adicional y Presentación
+
+- **Presentación para el examen**: **[Diapositivas en Canva](https://canva.link/xuistaowh0funtz)**
 
 ## Notas Importantes
 
