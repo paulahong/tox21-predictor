@@ -1,18 +1,24 @@
-import joblib, os
+import joblib
+import os
 import numpy as np
 import pandas as pd
 import shap
 from rdkit import Chem
 from rdkit.Chem import AllChem, Fragments, Descriptors
-from rdkit.Chem.SaltRemover import SaltRemover 
+from rdkit.Chem.SaltRemover import SaltRemover
 from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS 
 
-# --- CONFIGURACIÓN DE RUTAS ---
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# --- CONFIGURACIÓN DE RUTAS (CORREGIDA PARA HUGGING FACE) ---
+# Al estar index.py en la raíz, un solo os.path.dirname apunta correctamente al directorio del Space
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__, 
             template_folder=os.path.join(BASE_DIR, 'templates'),
             static_folder=os.path.join(BASE_DIR, 'static'))
+
+# Permite que cualquier aplicación externa (como tu web de Vercel) consulte esta API sin bloqueos de seguridad
+CORS(app)
 
 # --- DICCIONARIO DE EXPLICACIONES QUÍMICAS ---
 DESC_EXPLANATIONS = {
@@ -48,15 +54,9 @@ try:
     boruta_selector = data_bundle['boruta']
     optimal_threshold = data_bundle.get('threshold', 0.5)
     
-    # RECONSTRUCCIÓN DE NOMBRES DE CARACTERÍSTICAS (Garantizando consistencia absoluta)
-    # Orden original del script de entrenamiento:
-    # 1. Bits de Morgan (2048)
+    # RECONSTRUCCIÓN DE NOMBRES DE CARACTERÍSTICAS
     morgan_names = [f"MorganBit_{i}" for i in range(2048)]
-    
-    # 2. Fragmentos (Usando el mismo bucle del entrenamiento)
     fragment_names = [name for name, _ in Fragments.__dict__.items() if name.startswith('fr_')]
-    
-    # 3. Descriptores fisicoquímicos
     descriptor_names = [name for name, _ in Descriptors.descList]
     
     all_feature_names = np.array(morgan_names + fragment_names + descriptor_names)
@@ -79,9 +79,7 @@ def extract_all_features_api(smiles):
         mol = Chem.MolFromSmiles(smiles)
         if mol is None: return None
         
-        # --- SOLUCIÓN ERROR 1: Desalinización idéntica al entrenamiento ---
         mol = remover.StripMol(mol)
-        # Forzar canonicalización tras remover sales para evitar discrepancias estructurales
         smiles_clean = Chem.MolToSmiles(mol, isomericSmiles=False)
         mol = Chem.MolFromSmiles(smiles_clean)
         if mol is None: return None
@@ -90,7 +88,7 @@ def extract_all_features_api(smiles):
         generator = AllChem.GetMorganGenerator(radius=2, fpSize=2048)
         fp_array = generator.GetFingerprintAsNumPy(mol).astype(float)
         
-        # 2. Fragmentos (Mismo orden exacto dict.items())
+        # 2. Fragmentos
         frag_counts = []
         for name, func in Fragments.__dict__.items():
             if name.startswith('fr_'):
@@ -113,7 +111,7 @@ def extract_all_features_api(smiles):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return jsonify({"status": "API activa", "message": "Backend de Inteligencia Artificial funcionando correctamente."})
 
 @app.route('/api', methods=['POST', 'GET'])
 def predict():
@@ -144,10 +142,9 @@ def predict():
         is_toxic = prob >= optimal_threshold
         toxicity_label = 'Tóxico' if is_toxic else 'No Tóxico'
 
-        # 3. CÁLCULO DINÁMICO DE SHAP (Explicación local)
+        # 3. CÁLCULO DINÁMICO DE SHAP
         shap_values = explainer.shap_values(X_final)
         
-        # Resolver dimensiones de SHAP
         if isinstance(shap_values, list):
             shap_local = shap_values[1][0]  
         elif len(shap_values.shape) == 3:
@@ -157,7 +154,6 @@ def predict():
         else:
             shap_local = shap_values
 
-        # Obtener los índices de los 5 descriptores con mayor impacto ABSOLUTO
         top_indices = np.argsort(np.abs(shap_local))[-5:][::-1]
         
         top_features_list = []
@@ -197,4 +193,5 @@ def predict():
         return jsonify({'error': f'Error interno: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    # Forzamos la dirección global y el puerto 7860 obligatorio de Hugging Face
+    app.run(host='0.0.0.0', port=7860, debug=False)
