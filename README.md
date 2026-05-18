@@ -1,162 +1,58 @@
-# Tox21 Toxicity Predictor – Phase 1 & Phase 2
+# TOX-21: Predictor de Toxicidad Mitocondrial
 
-## 📚 Original Project Prompt (Phase 1)
+Este proyecto es una aplicación web desarrollada como parte de la asignatura de Bioinformática y Medicina de la Universidad da Coruña. Permite predecir la toxicidad mitocondrial de compuestos químicos mediante aprendizaje automático, analizando alteraciones en el potencial de membrana mitocondrial a partir de estructuras moleculares en formato SMILES.
 
-> **Goal:** Build a machine‑learning pipeline that predicts nuclear‑receptor (NR‑AR) toxicity from the **Tox21** dataset.  
-> - Download the public Tox21 CSV file.  
-> - Extract SMILES strings and the target label (`NR‑AR`).  
-> - Convert SMILES to RDKit molecular objects and compute **all 1D/2D RDKit descriptors**.  
-> - Replace `inf`/`-inf` values with `NaN`, impute missing values with the **mean** (using `SimpleImputer`).  
-> - Train three classifiers (Logistic Regression, Random Forest, SVM) with class‑balancing, evaluate with **accuracy** and **ROC‑AUC**, and keep the best model (by ROC‑AUC).  
-> - For the best model, extract the **top 5 most important descriptors** and write a short chemical explanation for each.  
-> - Save the best model to `best_model.pkl`.
+## Características Principales
 
-The Phase 1 implementation (`train.py`) now runs without errors, produces a best‑performing **SVM** model, and writes the top‑5 descriptor explanations to `descriptors_explanation.txt`.
+- **Predicción de toxicidad**: Ingrese una estructura molecular en formato SMILES para obtener una predicción de toxicidad mitocondrial (0-1).
+- **Visualización 2D interactiva**: Representación dinámica de la estructura molecular usando SmilesDrawer con temas personalizados.
+- **Explicación SHAP**: Identifica los factores estructurales y fisicoquímicos que más influyen en la predicción mediante análisis de importancia.
+- **Sistema de semáforo**: Resultados clasificados en tres categorías:
+  - 🟢 Verde (≤35%): No tóxico / Estable
+  - 🟡 Amarillo (35-65%): Advertencia / Zona gris
+  - 🔴 Rojo (>65%): Tóxico / Crítico
+- **Historial de consultas**: Almacena y permite revisar predicciones anteriores en el navegador mediante localStorage.
+- **Ejemplos predefinidos**: Acceso rápido a compuestos no tóxicos (ej. Aspirina) y tóxicos (ej. Testosterona).
 
----
+**Nota sobre el modelo utilizado**: El modelo entrenado en el servicio externo es el de oversampling. Los demás modelos (downsampling, reponderación, SMOTE) se han agrupado en la carpeta 'entrenamientos_probados' para mantener la información de qué se ha probado.
 
-## 🔎 Top 5 Important Descriptors (Phase 1 Result)
+## Requisitos
 
-| Rank | Descriptor | Why it matters |
-|------|------------|----------------|
-| 1 | **BCUT2D_MWLOW** | Low‑weight BCUT2D descriptor – captures the contribution of low‑mass fragments to overall molecular weight, influencing ADME properties. |
-| 2 | **BCUT2D_CHGLO** | Low‑charge BCUT2D descriptor – reflects the distribution of low partial charges, affecting how a molecule interacts electrostatically with biological targets. |
-| 3 | **NumAtomStereoCenters** | Number of stereogenic atoms – stereochemistry can dramatically change binding affinity and metabolic stability, thus impacting toxicity. |
-| 4 | **NumAliphaticCarbocycles** | Count of aliphatic carbocyclic rings – ring systems affect rigidity and shape, influencing membrane permeability and receptor binding. |
-| 5 | **SPS** | Sum of the atomic polarizabilities – a measure of overall molecular polarizability, correlated with how a compound interacts with the surrounding environment. |
+- Navegador web moderno (Chrome, Firefox, Edge, etc.)
+- Conexión a internet (para consumir la API de Hugging Face)
 
----
+## Instalación y Uso
 
-## 🚀 Phase 2 – Deploy a Free Web App on Vercel
+1. Abra el archivo `index.html` en su navegador web.
+2. Ingrese la estructura molecular en formato SMILES en el campo de entrada.
+3. Haga clic en "Predecir Toxicidad".
+4. Observe el resultado con el sistema de semáforo y la explicación de factores SHAP.
+5. Explore compuestos de ejemplo en la sección de ejemplos.
 
-The web app lets anyone input a **SMILES** string and instantly receive a toxicity prediction (Toxic / Non‑Toxic) with a probability score.
+## Tecnologías Utilizadas
 
-### 1. Repository Layout
+- **Frontend**: HTML5, CSS3, JavaScript (SmilesDrawer API)
+- **API**: Hugging Face Inference API (paulahong-tox21-predictor-api.hf.space)
+- **Almacenamiento**: localStorage para historial de consultas
+
+## Estructura del Proyecto
 
 ```
-/
-│   index.html          # UI page
-│   style.css           # Minimalist styling
-│   app.js              # Front‑end logic (fetches API)
-│   vercel.json         # Vercel configuration
-│   requirements.txt    # Python dependencies for the serverless function
-│   README.md           # You are reading it!
-│
-└───api/
-    │   index.py        # Vercel serverless Python function
-│
-└───best_model.pkl      # Trained SVM model (generated by Phase 1)
+tox21-predictor/
+├── static/          # Archivos frontend (app.js, style.css, descriptors-glossary.js)
+├── api/             # Scripts de la API
+├── entrenamientos_probados/  # Modelos y scripts de entrenamiento (train_smote.py, etc.)
+├── plots.zip        # Gráficos y visualizaciones generadas
+├── index.html       # Interfaz principal
+├── README.md        # Este documento
+└── requirements.txt # Dependencias para entrenamiento (si aplica)
+└── train_oversampling.py # Entrenamiento seleccionado para servicio externo
+
 ```
 
-### 2. Testing the App **Locally**
+## Notas Importantes
 
-1. **Clone the repo** (or copy the files into a folder).  
-2. **Create a virtual environment** (optional but recommended):
-
-   ```bash
-   python -m venv venv
-   source venv/Scripts/activate   # Windows
-   # or
-   source venv/bin/activate       # macOS/Linux
-   ```
-
-3. **Install the Python dependencies** (the serverless function uses these):
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Make sure the trained model exists** (`best_model.pkl`).  
-   If you need to re‑train, run the Phase 1 script:
-
-   ```bash
-   python train.py
-   ```
-
-5. **Install Vercel CLI** (if you haven’t already):
-
-   ```bash
-   npm i -g vercel   # requires Node.js
-   ```
-
-6. **Run the project locally**:
-
-   ```bash
-   vercel dev
-   ```
-
-   Vercel will start a local dev server (usually at `http://localhost:3000`).  
-   Open that URL in a browser, enter a SMILES string (e.g., `CC(=O)OC1=CC=CC=C1C(=O)O` for aspirin) and click **Predict Toxicity**. The result area will show the prediction and probability.
-
-### 3. Deploying to Vercel (Free)
-
-1. **Log in to Vercel** (or create an account):
-
-   ```bash
-   vercel login
-   ```
-
-2. **Deploy the project** (first time will ask a few questions, choose the defaults or give a project name):
-
-   ```bash
-   vercel
-   ```
-
-   Vercel will detect the `api/` folder, install the Python dependencies from `requirements.txt`, and create a serverless endpoint at `https://<your‑project>.vercel.app/api/predict`.
-
-3. **Set up a GitHub integration (optional but recommended)**:  
-   - Push the repository to GitHub.  
-   - In the Vercel dashboard, click **Import Project**, select the GitHub repo, and enable **Automatic Deployments**. Every push to `main` (or your chosen branch) will trigger a new deployment.
-
-4. **Test the live URL** – the same UI works on the deployed site. The front‑end calls `/api/predict`, which Vercel routes to the Python function.
-
-### 4. Linking the Repository to Zenodo (DOI Generation)
-
-1. **Create a GitHub Release**  
-   - Go to the **Releases** tab of your GitHub repository.  
-   - Click **Draft a new release**, tag it (e.g., `v1.0.0`), give a title, and publish.
-
-2. **Connect Zenodo to the GitHub repo**  
-   - Sign in to [Zenodo](https://zenodo.org) (or create an account).  
-   - In your Zenodo account, go to **GitHub** under **Upload** → **GitHub**.  
-   - Click **+** to **Add new repository**, select the repository you just released, and enable **Create a new version on each GitHub release**.
-
-3. **Generate a DOI**  
-   - After the first release is detected, Zenodo will automatically mint a **DOI** for that version.  
-   - The DOI appears on the Zenodo record page; you can cite it in publications.
-
-4. **Update the README** (optional) – add a badge linking to the Zenodo DOI:
-
-   ```markdown
-   [![DOI](https://zenodo.org/badge/DOI/10.xxxx/zenodo.xxxxx.svg)](https://doi.org/10.xxxx/zenodo.xxxxx)
-   ```
-
----
-
-## 📂 File Overview
-
-| File | Purpose |
-|------|---------|
-| `index.html` | Minimalist UI with SMILES input, predict button, and result display. |
-| `style.css` | Clean, responsive styling (container, loading spinner, result box, error handling). |
-| `app.js` | Front‑end logic: reads input, calls `/api/predict`, shows loading state, renders prediction. |
-| `api/index.py` | Vercel serverless Python function – computes RDKit descriptors, applies the same preprocessing as Phase 1, loads `best_model.pkl`, returns JSON with toxicity label and probability. |
-| `vercel.json` | Vercel configuration – tells Vercel to treat `api/index.py` as a Python serverless function and routes `/api/*` to it. |
-| `requirements.txt` | Lightweight Python dependencies for the serverless function (`rdkit-pypi`, `scikit-learn`, `pandas`, `numpy`). |
-| `README.md` | This documentation (project description, Phase 1 results, deployment guide, Zenodo DOI steps). |
-| `best_model.pkl` | Trained SVM model (generated by Phase 1). **Do not modify**. |
-
----
-
-## 🛠️ Notes & Tips
-
-* **Model Size:** `best_model.pkl` is well under Vercel’s 250 MB limit.  
-* **RDKit on Vercel:** The `rdkit-pypi` wheel is compiled for Linux (the Vercel runtime). No extra system libraries are required.  
-* **Security:** The API only accepts POST requests with a JSON body containing a `smiles` key. Invalid SMILES return a 400 error with a helpful message.  
-* **Extensibility:** You can replace the SVM model with another classifier by re‑training and updating `best_model.pkl`. The API code will work unchanged because it only relies on the model’s `predict_proba` method.  
-
----
-
-## 🎉 Done!
-
-You now have a fully functional, free‑to‑host web application that serves the toxicity prediction model. Deploy it with a single `vercel` command, share the live URL, and cite the work via Zenodo. Happy hacking!
+- La aplicación depende de la API de Hugging Face, por lo que requiere conexión a internet.
+- Los resultados pueden variar según el modelo entrenado en el servicio externo.
+- El historial de consultas se guarda localmente en el navegador (localStorage) y se mantiene entre sesiones.
+- La visualización 2D se genera dinámicamente usando SmilesDrawer para representar estructuras moleculares.
